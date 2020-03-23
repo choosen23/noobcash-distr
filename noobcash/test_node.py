@@ -1,7 +1,22 @@
 #import block
 import wallet
-
+import binascii
+import Crypto
+from Crypto import Random
 from Crypto.Hash import SHA
+from Crypto.PublicKey import RSA
+from Crypto.Signature import PKCS1_v1_5
+from Crypto.Cipher import PKCS1_OAEP
+import random
+import hashlib
+import json
+from time import time
+from urllib.parse import urlparse
+from uuid import uuid4
+import base64
+import ast
+from Crypto.Hash import SHA
+import sys
 
 """ Define some functions that is needed """
 def sha(text):
@@ -15,6 +30,7 @@ def sha(text):
 
 	return bin_string
 
+
 def correct_block(hash, difficulty):
 	sha_output_len = 160
 
@@ -22,6 +38,35 @@ def correct_block(hash, difficulty):
 		return True
 	
 	return False
+
+
+
+def generate_keys():
+    # RSA modulus length must be a multiple of 256 and >= 1024
+    modulus_length = 256*4  # use larger value in production
+    privatekey = RSA.generate(modulus_length, Random.new().read)
+    publickey = privatekey.publickey()
+    return privatekey, publickey
+
+
+
+def encrypt_message(a_message, publickey):
+    encryptor = PKCS1_OAEP.new(publickey)
+    encrypted = encryptor.encrypt(bytes(a_message, "utf8"))
+    # base64 encoded strings are database friendly
+    encoded_encrypted_msg = base64.b64encode(encrypted)
+    return encoded_encrypted_msg
+
+
+def decrypt_message(encoded_encrypted_msg, privatekey):
+
+    decryptor = PKCS1_OAEP.new(privatekey)
+    decoded_encrypted_msg = base64.b64decode(encoded_encrypted_msg)
+    decrypted = decryptor.decrypt(ast.literal_eval(str(decoded_encrypted_msg)))
+
+    # decoded_decrypted_msg = privatekey.decrypt(decoded_encrypted_msg)
+    return decrypted
+
 
 
 class node:
@@ -45,6 +90,32 @@ class node:
 
 		#self.ring[]   #here we store information for every node, as its id, its address (ip:port) its public key and its balance
 
+	def validate_transaction(self):
+		
+		my_wallet = wallet.wallet()
+		#Define pk (Public Key) and sk (Secret Key)
+		sk = my_wallet.private_key
+		pk = my_wallet.public_key
+
+		#We define the message
+		message = "Oh nana Oh nanana"
+		encrypted_msg = encrypt_message(message, pk)
+		decrypted_msg = decrypt_message(encrypted_msg, sk)
+
+		# print("%s " % (sk.exportKey()))
+		# print("%s " % (pk.exportKey()))
+		print(" Original content: %s " % (message))
+		print("Encrypted message: %s " % (encrypted_msg))
+		print("Decrypted message: %s " % (decrypted_msg))
+
+		return 0
+
+
+
+
+
+
+
 
 
 	def create_wallet(self):
@@ -59,12 +130,12 @@ class node:
 		self.wallet.showBalance()
 
 
-	def mine_block(block, difficulty):
+	def mine_block(self,block, difficulty):
 		nonce = 0
 
 		while(True):
 			hashed = sha(block + str(nonce))
-			if correct(hashed, difficulty):
+			if correct_block(hashed, difficulty):
 				print("New block is mined with success!")
 				print("Nonce:", nonce)
 				print("Block ID:", hashed)
@@ -85,6 +156,7 @@ if __name__ == "__main__":
 	try:
 		node_id = int(sys.argv[1])
 		my_node = node(node_id)
+		print(my_node.validate_transaction())
 
 	except Exception as ex:
 		print("Node is not created.")
