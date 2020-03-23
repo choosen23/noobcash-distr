@@ -6,34 +6,50 @@ import json
 TXOs = []
 
 tr = {}
-tr['transaction_id'] = 1 # transaction id
-tr['wallet_id'] = 1      # wallet's public key
-tr['type'] = 'STXO'      # spent TXO
-tr['amount'] = 10        # NBCs
+tr['transaction_id'] = '1'   # transaction id
+tr['wallet_id'] = "1"        # wallet's public key
+tr['type'] = 'UTXO'          # spent TXO
+tr['amount'] = 10            # NBCs
 
 TXOs.append(tr)
 
 tr = {}
-tr['transaction_id'] = 2 # transaction id
-tr['wallet_id'] = 1      # wallet's public key
-tr['type'] = 'UTXO'      # spent TXO
-tr['amount'] = 111       # NBCs
+tr['transaction_id'] = '2'   # transaction id
+tr['wallet_id'] = "1"        # wallet's public key
+tr['type'] = 'UTXO'          # spent TXO
+tr['amount'] = 111           # NBCs
 
 TXOs.append(tr)
 
 tr = {}
-tr['transaction_id'] = 3 # transaction id
-tr['wallet_id'] = 3      # wallet's public key
-tr['type'] = 'UTXO'      # spent TXO
-tr['amount'] = 102       # NBCs
+tr['transaction_id'] = "3" # transaction id
+tr['wallet_id'] = "3"      # wallet's public key
+tr['type'] = 'UTXO'        # spent TXO
+tr['amount'] = 102         # NBCs
 
 TXOs.append(tr)
 
 tr = {}
-tr['transaction_id'] = 4 # transaction id
-tr['wallet_id'] = 1      # wallet's public key
-tr['type'] = 'UTXO'      # spent TXO
-tr['amount'] = 900       # NBCs
+tr['transaction_id'] = '5' # transaction id
+tr['wallet_id'] = '1'      # wallet's public key
+tr['type'] = 'UTXO'        # spent TXO
+tr['amount'] = 900         # NBCs
+
+TXOs.append(tr)
+
+tr = {}
+tr['transaction_id'] = '6' # transaction id
+tr['wallet_id'] = '1'      # wallet's public key
+tr['type'] = 'UTXO'        # spent TXO
+tr['amount'] = 200         # NBCs
+
+TXOs.append(tr)
+
+tr = {}
+tr['transaction_id'] = '7' # transaction id
+tr['wallet_id'] = '1'      # wallet's public key
+tr['type'] = 'UTXO'        # spent TXO
+tr['amount'] = 500         # NBCs
 
 TXOs.append(tr)
 
