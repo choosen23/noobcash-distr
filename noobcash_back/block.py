@@ -11,10 +11,11 @@ class Block:
 		#self.hash
 		#self.nonce
 		#self.listOfTransactions
+		pass
 
-	def myHash:
+	def myHash(self):
 		#calculate self.hash
-
+		pass
 
 	def add_transaction(transaction transaction, blockchain blockchain):
 		#add a transaction to the block
