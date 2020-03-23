@@ -18,3 +18,7 @@ class Block:
 
 	def add_transaction(transaction transaction, blockchain blockchain):
 		#add a transaction to the block
+
+
+
+
