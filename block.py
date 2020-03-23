@@ -11,7 +11,7 @@ class Block:
 		#self.hash
 		#self.nonce
 		#self.listOfTransactions
-	
+
 	def myHash:
 		#calculate self.hash
 

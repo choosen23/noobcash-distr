@@ -1,0 +1,1 @@
+[{"transaction_id": 1, "wallet_id": 1, "type": "STXO", "amount": 10}, {"transaction_id": 2, "wallet_id": 1, "type": "UTXO", "amount": 111}, {"transaction_id": 3, "wallet_id": 3, "type": "UTXO", "amount": 102}, {"transaction_id": 4, "wallet_id": 1, "type": "UTXO", "amount": 900}]

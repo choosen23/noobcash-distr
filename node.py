@@ -1,6 +1,8 @@
 import block
 import wallet
 
+import sys
+
 class node:
 	def __init__():
 		self.NBC=100;
@@ -9,9 +11,9 @@ class node:
 		#self.chain
 		#self.current_id_count
 		#self.NBCs
-		#self.wallet
+		self.wallet = create_wallet()
 
-		#slef.ring[]   #here we store information for every node, as its id, its address (ip:port) its public key and its balance 
+		#self.ring[]   #here we store information for every node, as its id, its address (ip:port) its public key and its balance
 
 
 
@@ -20,6 +22,10 @@ class node:
 
 	def create_wallet():
 		#create a wallet for this node, with a public key and a private key
+
+		my_wallet = wallet()
+
+		return my_wallet
 
 	def register_node_to_ring():
 		#add this node to the ring, only the bootstrap node can add a node to the ring after checking his wallet and ip:port address
@@ -52,7 +58,7 @@ class node:
 	def broadcast_block():
 
 
-		
+
 
 	def valid_proof(.., difficulty=MINING_DIFFICULTY):
 
@@ -69,4 +75,7 @@ class node:
 		#resolve correct chain
 
 
+
+if __name__ == "__main__":
+	my_node = node(node_id)
 
