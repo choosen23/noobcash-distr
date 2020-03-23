@@ -1,70 +1,87 @@
 import binascii
-
 import Crypto
-import Crypto.Random
+from Crypto import Random
 from Crypto.Hash import SHA
 from Crypto.PublicKey import RSA
 from Crypto.Signature import PKCS1_v1_5
-
+from Crypto.Cipher import PKCS1_OAEP
+import random
 import hashlib
 import json
 from time import time
 from urllib.parse import urlparse
 from uuid import uuid4
+import base64
+import ast
 
+
+def generate_keys():
+    # RSA modulus length must be a multiple of 256 and >= 1024
+    modulus_length = 256*4  # use larger value in production
+    privatekey = RSA.generate(modulus_length, Random.new().read)
+    publickey = privatekey.publickey()
+    return privatekey, publickey
 
 
 class wallet:
 
-	def __init__(self):
-		##set
+    def __init__(self):
+        # set
 
-		self.public_key = None
-		self.private_key = None
+        self.public_key = None
+        self.private_key = None
 
-		self.generate_wallet()
+        self.generate_wallet()
 
-		#self_address
+        # self_address
 
-		with open('./TXOexample/someTXOs.json', encoding='utf8') as trs:
-			trs = json.load(trs)
+        with open('./TXOexample/someTXOs.json', encoding='utf8') as trs:
+            trs = json.load(trs)
 
-		self.transactions = trs
+        self.transactions = trs
 
-		#self.transactions
+        # self.transactions
 
-	def generate_wallet(self):
-		""" Generates a pair of public/private key using RSA algorithm """
+    def generate_wallet(self):
+        """ Generates a pair of public/private key using RSA algorithm """
 
-		public = 1
-		private = 2
+        privatekey, publickey = generate_keys()
+        """ Example of use """
+        # message = "Oh nana Oh nanana"
+        # encrypted_msg = encrypt_message(message, publickey)
+        # decrypted_msg = decrypt_message(encrypted_msg, privatekey)
 
+        # print("%s " % (privatekey.exportKey()))
+        # print("%s " % (publickey.exportKey()))
+        # print(" Original content: %s " % (message))
+        # print("Encrypted message: %s " % (encrypted_msg))
+        # print("Decrypted message: %s " % (decrypted_msg))
+        self.public_key = publickey
+        self.private_key = privatekey
 
-		self.public_key = public
-		self.private_key = private
+        print("New wallet is created.")
+        print("Wallet public key:", self.public_key)
+        print()
 
-		print("New wallet is created.")
-		print("Wallet public key:", self.public_key)
-		print()
+    def balance(self):
+        """ Wallet balance is calculated by adding all UTXOs having this wallet as a reciever """
 
-	def balance(self):
-		""" Wallet balance is calculated by adding all UTXOs having this wallet as a reciever """
+        acc_balance = 0
 
-		acc_balance = 0
+        for tr in self.transactions:
+            if tr['wallet_id'] == self.public_key and tr['type'] == 'UTXO':
+                acc_balance += tr['amount']
 
-		for tr in self.transactions:
-			if tr['wallet_id'] == self.public_key and tr['type'] == 'UTXO':
-				acc_balance += tr['amount']
+        return acc_balance
 
-		return acc_balance
-
-	def showBalance(self):
-		print("Wallet public key:", self.public_key)
-		print("Balance:", self.balance(), "NBC")
-		print()
+    def showBalance(self):
+        print("Wallet public key:", self.public_key)
+        print("Balance:", self.balance(), "NBC")
+        print()
 
 
 if __name__ == '__main__':
 
-	ros_wallet = wallet()
-	ros_wallet.showBalance()
+    # ros_wallet = wallet()
+    # ros_wallet.showBalance()
+    print("testing")
