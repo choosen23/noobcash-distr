@@ -19,6 +19,26 @@ import sys
 def hash_data(data):
     return hashlib.sha256(data.encode('utf8')).hexdigest()
 
+""" Define some functions that is needed """
+def sha(text):
+	""" Hash the text with SHA encryption
+		The output is the hashed text in binary form """
+
+	byte_string = text.encode()
+	hashed = SHA.new(byte_string)
+	hex_string = hashed.hexdigest()
+	bin_string = bin(int(hex_string, 16))[2:]
+
+	return bin_string
+
+def correct_block(hash, difficulty):
+	sha_output_len = 160
+
+	if (sha_output_len - len(hash)) >= difficulty:
+		return True
+	
+	return False
+
 
 class node:
 	def __init__(self, node_id):
@@ -79,6 +99,27 @@ class node:
 
 	def show_wallet_balance(self):
 		self.wallet.showBalance()
+
+
+	def mine_block(block, difficulty):
+		nonce = 0
+
+		while(True):
+			hashed = sha(block + str(nonce))
+			if correct(hashed, difficulty):
+				print("New block is mined with success!")
+				print("Nonce:", nonce)
+				print("Block ID:", hashed)
+				print("Binary hash lenght", len(hashed))
+
+				return hashed
+
+			try:
+				nonce += 1
+						
+			except Exception as ex:
+				print("nonce reached max value")
+				raise ex
 
 
 if __name__ == "__main__":
