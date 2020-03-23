@@ -1,2 +1,4 @@
-myenv
+myenv/**
 __pycache__
+.vscode/**
+TXOexample/**
