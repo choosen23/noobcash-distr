@@ -111,13 +111,6 @@ class node:
 		return 0
 
 
-
-
-
-
-
-
-
 	def create_wallet(self):
 		""" create a wallet for this node, with a public key and a private key """
 

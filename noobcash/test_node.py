@@ -64,7 +64,7 @@ class node:
 
 		while(True):
 			hashed = sha(block + str(nonce))
-			if correct_block(hashed, difficulty):
+			if correct(hashed, difficulty):
 				print("New block is mined with success!")
 				print("Nonce:", nonce)
 				print("Block ID:", hashed)
@@ -78,6 +78,8 @@ class node:
 			except Exception as ex:
 				print("nonce reached max value")
 				raise ex
+
+	def valid_proof(block, block_id, difficulty):
 
 
 if __name__ == "__main__":
