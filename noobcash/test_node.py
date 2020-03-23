@@ -1,9 +1,8 @@
 #import block
 import wallet
 
-<<<<<<< HEAD
-import sys
-=======
+from Crypto.Hash import SHA
+
 """ Define some functions that is needed """
 def sha(text):
 	""" Hash the text with SHA encryption
@@ -24,7 +23,6 @@ def correct_block(hash, difficulty):
 	
 	return False
 
->>>>>>> ec225ffb0b67b2f89f2bd177884a04d3531f563f
 
 class node:
 	def __init__(self, node_id):
