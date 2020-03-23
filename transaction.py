@@ -156,3 +156,10 @@ if __name__ == "__main__":
 	    trs = json.load(trs)
 
     transaction = Transaction("1", "privatekey2", "recipient3", 100, trs)
+
+    h = SHA.new(b'ss')
+    h2=h.hexdigest()
+    print(binascii.a2b_uu(str(h2)))
+
+    h.update(b'Hello')
+    print(h.hexdigest())
