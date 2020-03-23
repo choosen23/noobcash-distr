@@ -64,7 +64,7 @@ class node:
 
 		while(True):
 			hashed = sha(block + str(nonce))
-			if correct(hashed, difficulty):
+			if correct_block(hashed, difficulty):
 				print("New block is mined with success!")
 				print("Nonce:", nonce)
 				print("Block ID:", hashed)
