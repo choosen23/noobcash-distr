@@ -1,6 +1,8 @@
 #import block
 import wallet
 
+from Crypto.Hash import SHA
+
 """ Define some functions that is needed """
 def sha(text):
 	""" Hash the text with SHA encryption
