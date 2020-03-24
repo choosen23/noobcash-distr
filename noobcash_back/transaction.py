@@ -26,6 +26,7 @@ def encrypt_message(a_message, key):
 
 
 class Transaction:
+
     def __init__(self, sender_address, sender_private_key, recipient_address, value, prev_transactions):
 
         ##set
@@ -89,6 +90,9 @@ class Transaction:
         else:
             print("Transaction cannot be done")
         ##############################################
+
+    def from_json(self, jsonfile):
+
 
 
     def calculate_transaction_id(self):

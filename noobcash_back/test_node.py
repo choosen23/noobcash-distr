@@ -2,6 +2,7 @@ import block
 import wallet
 import transaction
 from transaction import Transaction
+import settings
 
 import binascii
 import Crypto
@@ -84,28 +85,39 @@ def decrypt_message(encoded_encrypted_msg, privatekey):
 	return decrypted
 
 class node:
-	def __init__(self, node_id):
+	def __init__(self, num_nodes = 0, coordinator = {}):
 		#self.NBC=100;
-		##set
 
-		self.node_id = node_id
-		print("Node ID:", self.node_id)
-
-		self.boostrap_node = False
-		if node_id == 0:
-			self.boostrap_node = True
-			print("Boostrap node")
-
-		self.blockchain = []
-
-		#self.current_id_count
-		#self.NBCs
+		self.node_id = None
 
 		self.wallet = self.create_wallet()
 
-		#self.ring[]   #here we store information for every node, as its id, its address (ip:port) its public key and its balance
+		self.boostrap_node = False
 
-	def validate_transaction(self, transaction, encrypted_transaction_message):
+		self.ring = None
+		self.blockchain = None
+
+		if num_nodes:
+			self.boostrap_node = True
+			print("Boostrap node")
+
+			self.node_id = 0
+
+			#create genesis block
+			# prev hash = 1 ,  nonce = 0 , trans ( 0 --> public key boostrap(self.wallet)) gives 100*num_nodes NBC
+			#self.blockchain = [genesis block]
+
+			self.num_nodes = num_nodes
+			self.current_id_count = 0
+
+			self.ring = [dict() for x in range(num_nodes)] # here we store information for every node, as its id, its address (ip:port)
+
+			self.ring[0]['ip'] = coordinator['ip']
+			self.ring[0]['port'] = coordinator['port']
+			self.ring[0]['public_key'] = self.wallet.public_key
+
+
+	def validate_transaction(self, transaction):
 
 		#Define pk (Public Key) and sk (Secret Key)
 		sk = self.wallet.private_key
@@ -144,30 +156,24 @@ class node:
 
 
 	def create_transaction(self, receiver, value):
-		#remember to broadcast it
 		new_transaction = Transaction(self.wallet.public_key, self.wallet.private_key, receiver, value, self.wallet.transactions)
 
-		broadcast_transaction(new_transaction)
-
-
-	def broadcast_transaction():
-		# MHTSOOOOOOO
-		pass
+		return new_transaction
 
 
 	def add_transaction_to_block(self, new_transaction):
-		if self.validdate_transaction(new_transaction):
+		if self.validate_transaction(new_transaction):
 			self.open_transactions.append(new_transaction)
 
 			#capacity must be defined somewhere
-			if len(open_transactions) == capacity:
-				previous_hash = self.blockchain.getHashOfTheLastBlock
+			if len(open_transactions) == settings.capacity:
+				previous_hash = self.blockchain.getHashOfTheLastBlock()
 
 				block_content = str(previous_hash) + '\n'
 				block_content += transactions_text(self.open_transactions)
 				
 				#capacity must be defined somewhere
-				nonce = self.mine_block(block_content, difficulty)
+				nonce = self.mine_block(block_content, settings.difficulty)
 
 				new_block = Block(previous_hash, nonce, self.open_transactions)
 
