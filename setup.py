@@ -9,6 +9,9 @@ setup(
     zip_safe=False,
     install_requires=[
     'flask',
+    'flask_cors',
+    'netifaces'
     'blockchain',
-    'crypto']
+    'crypto',
+    'Datetime']
 )

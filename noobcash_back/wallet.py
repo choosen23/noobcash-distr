@@ -1,4 +1,5 @@
 import binascii
+
 import Crypto
 from Crypto import Random
 from Crypto.Hash import SHA
@@ -21,6 +22,24 @@ def generate_keys():
     privatekey = RSA.generate(modulus_length, Random.new().read)
     publickey = privatekey.publickey()
     return privatekey, publickey
+
+
+def encrypt_message(a_message, publickey):
+    encryptor = PKCS1_OAEP.new(publickey)
+    encrypted = encryptor.encrypt(bytes(a_message, "utf8"))
+    # base64 encoded strings are database friendly
+    encoded_encrypted_msg = base64.b64encode(encrypted)
+    return encoded_encrypted_msg
+
+
+def decrypt_message(encoded_encrypted_msg, privatekey):
+
+    decryptor = PKCS1_OAEP.new(privatekey)
+    decoded_encrypted_msg = base64.b64decode(encoded_encrypted_msg)
+    decrypted = decryptor.decrypt(ast.literal_eval(str(decoded_encrypted_msg)))
+
+    # decoded_decrypted_msg = privatekey.decrypt(decoded_encrypted_msg)
+    return decrypted
 
 
 class wallet:
@@ -56,11 +75,18 @@ class wallet:
         # print(" Original content: %s " % (message))
         # print("Encrypted message: %s " % (encrypted_msg))
         # print("Decrypted message: %s " % (decrypted_msg))
-        self.public_key = publickey
-        self.private_key = privatekey
+
+        # randomly creates a public key
+        public = "%032x" % random.getrandbits(256)
+        #using public key and sha256 we create private key
+        private = hashlib.sha256(public.encode('utf8')).hexdigest()
+  		
+        self.public_key = public
+        self.private_key = private
 
         print("New wallet is created.")
         print("Wallet public key:", self.public_key)
+        print("Wallet private key:", self.private_key)
         print()
 
     def balance(self):
@@ -82,6 +108,6 @@ class wallet:
 
 if __name__ == '__main__':
 
-    # ros_wallet = wallet()
-    # ros_wallet.showBalance()
-    print("testing")
+    ros_wallet = wallet()
+    ros_wallet.showBalance()
+    
