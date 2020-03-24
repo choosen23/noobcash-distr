@@ -142,6 +142,24 @@ class node:
 	def show_wallet_balance(self):
 		self.wallet.showBalance()
 
+	
+	def register_node_to_ring():
+		#add this node to the ring, only the bootstrap node can add a node to the ring after checking his wallet and ip:port address
+		#bottstrap node informs all other nodes and gives the request node an id and 100 NBCs
+		raise
+
+
+	def create_transaction(self, receiver, value, signature):
+		#remember to broadcast it
+		new_transaction = Transaction(self.wallet.public_key, self.wallet.private_key, receiver, value, self.wallet.transactions)
+
+		broadcast_transaction(new_transaction)
+
+
+	def broadcast_transaction():
+		# MHTSOOOOOOO
+		pass
+
 
 	def add_transaction_to_block(self, new_transaction):
 		if self.validdate_transaction(new_transaction):
@@ -188,8 +206,21 @@ class node:
 		pass
 
 
-	def valid_proof(self, block, block_id, difficulty):
-		
+	def valid_proof(self, block, difficulty):
+		pass
+
+
+	#concencus functions
+
+	def valid_chain(self, chain):
+		#check for the longer chain accroose all nodes
+		pass
+
+
+	def resolve_conflicts(self):
+		#resolve correct chain
+		pass
+
 
 
 if __name__ == "__main__":
