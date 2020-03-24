@@ -1,22 +1,30 @@
-import blockchain
+#import blockchain
+import test_node as node #import node sto telos
 
+from datetime import datetime
 
 
 class Block:
-	def __init__(self, previousHash, timestamp, hash, nonce, listOfTransactions):
-		##set
+	def __init__(self, previousHash, nonce, listOfTransactions):
 
 		self.previousHash = previousHash
-		self.timestamp = timestamp
-		self.hash = hash
+		self.timestamp = datetime.now()
 		self.nonce = nonce
 		self.listOfTransactions = listOfTransactions
-		pass
+		self.hash = myHash(listOfTransactions)
 
-	def myHash(self):
-		#calculate self.hash
-		pass
 
-	def add_transaction(transaction transaction, blockchain blockchain):
+	def myHash(self, listOfTransactions):
+		""" Calculates the hash of the block """
+
+		transactions = node.transactions_text(listOfTransactions)
+
+		text = str(self.previousHash) + '\n'
+		text += transactions
+		text += str(self.nonce)
+
+		return text
+
+	def add_transaction(transaction, blockchain):
 		#add a transaction to the block
-
+		pass

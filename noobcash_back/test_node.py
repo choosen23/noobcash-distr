@@ -1,4 +1,4 @@
-#import block
+import block
 import wallet
 import binascii
 import Crypto
@@ -19,6 +19,7 @@ from Crypto.Hash import SHA
 import sys
 
 """ Define some functions that is needed """
+
 def sha(text):
 	""" Hash the text with SHA encryption
 		The output is the hashed text in binary form """
@@ -39,6 +40,16 @@ def correct_block(hash, difficulty):
 	
 	return False
 
+def transactions_text(transactions):
+	""" Creates a text with the transactions
+		This text will be placed in the corresponding block """
+		
+	text = []
+
+	for tr in transactions:
+		text += tr.text + '\n'
+
+	return text
 
 
 def generate_keys():

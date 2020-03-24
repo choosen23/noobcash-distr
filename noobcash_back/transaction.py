@@ -30,30 +30,33 @@ class Transaction:
         print()
         ##############################################
 
-        #self.sender_address: To public key του wallet από το οποίο προέρχονται τα χρήματα
+        # The wallet's public key of the sender that contains the money
         self.sender_address = sender_address
 
-        #self.receiver_address: To public key του wallet στο οποίο θα καταλήξουν τα χρήματα
+        # The wallet's public key of the recipient of the money
         self.receiver_address = recipient_address
 
         # Checks if the transaction can be done
-        self.canBeDone = True
+        self.canBeDone = None
 
-        #self.amount: το ποσό που θα μεταφερθεί
+        # The amount that is about to be transfered
         self.amount = value
 
-        #self.transaction_id: το hash του transaction
+        # Text that contains the transaction info
+        self.text = self.sender_address + ' pays ' + str(self.amount) + ' NBC to ' + self.receiver_address
+
+        # The unique ID of the transaction
         self.transaction_id = self.calculate_transaction_id()
 
-        #self.transaction_inputs: λίστα από Transaction Input
+        # A list of Transaction Input
         self.transaction_inputs = prev_transactions
 
-        #self.transaction_outputs: λίστα από Transaction Output
+        # A list of Transaction Output
         self.transaction_outputs = self.calculate_transaction_outputs()
 
+        # The transaction with the sender's signature
         self.signature = self.sign_transaction(sender_private_key)
 
-        self.canBeDone = None
 
         ##############################################
         #ONLY FOR DEBUG
@@ -143,7 +146,7 @@ class Transaction:
     def sign_transaction(self, private_key):
         """ Sign transaction with private key """
 
-        message = self.sender_address + ' pais ' + str(self.amount) + ' NBC to ' + self.receiver_address
+        message = self.text
         
         return(private_key + "-signature")
 
