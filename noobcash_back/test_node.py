@@ -1,5 +1,8 @@
 import block
 import wallet
+import transaction
+from transaction import Transaction
+
 import binascii
 import Crypto
 from Crypto import Random
@@ -71,12 +74,12 @@ def encrypt_message(a_message, publickey):
 
 def decrypt_message(encoded_encrypted_msg, privatekey):
 
-    decryptor = PKCS1_OAEP.new(privatekey)
-    decoded_encrypted_msg = base64.b64decode(encoded_encrypted_msg)
-    decrypted = decryptor.decrypt(ast.literal_eval(str(decoded_encrypted_msg)))
+	decryptor = PKCS1_OAEP.new(privatekey)
+	decoded_encrypted_msg = base64.b64decode(encoded_encrypted_msg)
+	decrypted = decryptor.decrypt(ast.literal_eval(str(decoded_encrypted_msg)))
 
-    # decoded_decrypted_msg = privatekey.decrypt(decoded_encrypted_msg)
-    return decrypted
+	# decoded_decrypted_msg = privatekey.decrypt(decoded_encrypted_msg)
+	return decrypted
 
 
 
@@ -93,29 +96,35 @@ class node:
 			self.boostrap_node = True
 			print("Boostrap node")
 
-		self.chain = []
+		self.blockchain = []
 
 		#self.current_id_count
 		#self.NBCs
+
 		self.wallet = self.create_wallet()
 
 		#self.ring[]   #here we store information for every node, as its id, its address (ip:port) its public key and its balance
 
-	def validate_transaction(self):
+		# Open transactions that are waiting to be included to a new block
+		self.open_transactions = []
+
+
+	def validate_transaction(self, transaction):
 		
-		my_wallet = wallet.wallet()
+		#my_wallet = wallet.wallet()
+		#mix exeis hdh wallet den ftiaxneis allo broooo
 		#Define pk (Public Key) and sk (Secret Key)
-		sk = my_wallet.private_key
-		pk = my_wallet.public_key
+		sk = self.wallet.private_key
+		pk = self.wallet.public_key
 
 		#We define the message
-		message = "Oh nana Oh nanana"
+		message = transaction.text
 		encrypted_msg = encrypt_message(message, pk)
 		decrypted_msg = decrypt_message(encrypted_msg, sk)
 
 		# print("%s " % (sk.exportKey()))
 		# print("%s " % (pk.exportKey()))
-		print(" Original content: %s " % (message))
+		print("Original content: %s " % (message))
 		print("Encrypted message: %s " % (encrypted_msg))
 		print("Decrypted message: %s " % (decrypted_msg))
 
@@ -123,7 +132,7 @@ class node:
 
 
 	def create_wallet(self):
-		""" create a wallet for this node, with a public key and a private key """
+		""" Creates a wallet for this node, with a public key and a private key """
 
 		my_wallet = wallet.wallet()
 
@@ -134,7 +143,26 @@ class node:
 		self.wallet.showBalance()
 
 
-	def mine_block(self,block, difficulty):
+	def add_transaction_to_block(self, new_transaction):
+		if self.validdate_transaction(new_transaction):
+			self.open_transactions.append(new_transaction)
+
+			#capacity must be defined somewhere
+			if len(open_transactions) == capacity:
+				previous_hash = self.blockchain.getHashOfTheLastBlock
+
+				block_content = str(previous_hash) + '\n'
+				block_content += transactions_text(self.open_transactions)
+				
+				#capacity must be defined somewhere
+				nonce = self.mine_block(block_content, difficulty)
+
+				new_block = Block(previous_hash, nonce, self.open_transactions)
+
+				broadcast_block(new_block)
+
+
+	def mine_block(self, block, difficulty):
 		nonce = 0
 
 		while(True):
@@ -145,7 +173,7 @@ class node:
 				print("Block ID:", hashed)
 				print("Binary hash lenght", len(hashed))
 
-				return hashed
+				return nonce
 
 			try:
 				nonce += 1
@@ -155,12 +183,20 @@ class node:
 				raise ex
 
 
+	def broadcast_block(self):
+		# MHTSOOOOO
+		pass
+
+
+	def valid_proof(self, block, block_id, difficulty):
+		
+
+
 if __name__ == "__main__":
 
 	try:
 		node_id = int(sys.argv[1])
 		my_node = node(node_id)
-		print(my_node.validate_transaction())
 
 	except Exception as ex:
 		print("Node is not created.")
@@ -170,4 +206,3 @@ if __name__ == "__main__":
 		print("Node is created with success.\n")
 
 	my_node.show_wallet_balance()
-

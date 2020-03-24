@@ -76,21 +76,18 @@ class wallet:
         # print("Encrypted message: %s " % (encrypted_msg))
         # print("Decrypted message: %s " % (decrypted_msg))
 
-	def generate_wallet(self):
-		""" Generates a pair of public/private key using RSA algorithm """ 
-
-		# randomly creates a public key
-		public = "%032x" % random.getrandbits(256)
-		#using public key and sha256 we create private key
-		private = hashlib.sha256(public.encode('utf8')).hexdigest()
+        # randomly creates a public key
+        public = "%032x" % random.getrandbits(256)
+        #using public key and sha256 we create private key
+        private = hashlib.sha256(public.encode('utf8')).hexdigest()
   		
-		self.public_key = public
-		self.private_key = private
+        self.public_key = public
+        self.private_key = private
 
-		print("New wallet is created.")
-		print("Wallet public key:", self.public_key)
-		print("Wallet private key:", self.private_key)
-		print()
+        print("New wallet is created.")
+        print("Wallet public key:", self.public_key)
+        print("Wallet private key:", self.private_key)
+        print()
 
     def balance(self):
         """ Wallet balance is calculated by adding all UTXOs having this wallet as a reciever """
@@ -113,3 +110,4 @@ if __name__ == '__main__':
 
     ros_wallet = wallet()
     ros_wallet.showBalance()
+    
