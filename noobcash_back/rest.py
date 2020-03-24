@@ -12,12 +12,13 @@ app = Flask(__name__)
 CORS(app)
 app.config["DEBUG"] = True
 #blockchain = Blockchain()
-
+*
 
 @app.route('/init_coordinator', methods=['POST'])
 def init_coordinator():
     participants = request.json['participants']
-    # Build genesis block
+    import test_node as node
+    node(participants)
 
     return '',200
 
@@ -40,7 +41,17 @@ def get_list_of_nodes():
 
 @app.route('/new_transaction', methods=['POST'])
 def new_transaction():
-    #
+    # given a transaction object
+    # import test_node as node
+    # node.create_transaction(id->public_key receiver,value)
+    # broadcast transaction
+    return '',200
+
+@app.route('/accept_and_verify_transaction', methods=['POST'])
+def accept_and_verify_transaction():
+    # given a transaction in body with json
+    # import test_mnode as node
+    # node.add_transaction_to_block(transaction object) = True or False
     return '',200
 
 @app.route('/view_last_transactions', methods=['GET'])

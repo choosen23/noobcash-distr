@@ -30,7 +30,7 @@ while True:
 	#print(cmd)
 
 	if cmd == 'balance':
-		req = requests.get("http://127.0.0.1:5000/")
+		req = requests.get("http://127.0.0.1:5000/new_transaction")
 	elif cmd == 'view':
 		print(URL)
 	elif cmd == "balance":
