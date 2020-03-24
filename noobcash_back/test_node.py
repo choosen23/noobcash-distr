@@ -105,9 +105,8 @@ class node:
 
 		#self.ring[]   #here we store information for every node, as its id, its address (ip:port) its public key and its balance
 
-	def validate_transaction(self):
+	def validate_transaction(self, transaction, encrypted_transaction_message):
 
-		my_wallet = wallet.wallet()
 		#Define pk (Public Key) and sk (Secret Key)
 		sk = self.wallet.private_key
 		pk = self.wallet.public_key

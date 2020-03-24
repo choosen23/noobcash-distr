@@ -154,18 +154,12 @@ class Transaction:
 
     def sign_transaction(self, private_key):
         """ Sign transaction with private key """
-<<<<<<< HEAD:noobcash/transaction.py
-        """ We crypto our transaction using private key"""
-        private_key = wallet.wallet().private_key
-        message = self.sender_address + ' pais ' + str(self.amount) + ' NBC to ' + self.receiver_address
-        signature = encrypt_message(message,private_key)
-        return signature
-=======
+        """ We crypto our transaction using private key """
 
         message = self.text
-        
-        return(private_key + "-signature")
->>>>>>> 131ae9214024ecfcf1133e9d753e740ff79e38ec:noobcash_back/transaction.py
+        signature = encrypt_message(message, private_key)
+
+        return signature
 
 
 if __name__ == "__main__":
