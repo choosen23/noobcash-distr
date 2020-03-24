@@ -143,7 +143,7 @@ class node:
 		raise
 
 
-	def create_transaction(self, receiver, value, signature):
+	def create_transaction(self, receiver, value):
 		#remember to broadcast it
 		new_transaction = Transaction(self.wallet.public_key, self.wallet.private_key, receiver, value, self.wallet.transactions)
 
