@@ -41,6 +41,8 @@ def correct_block(hash, difficulty):
 
 
 
+
+
 def generate_keys():
     # RSA modulus length must be a multiple of 256 and >= 1024
     modulus_length = 256*4  # use larger value in production
@@ -67,8 +69,6 @@ def decrypt_message(encoded_encrypted_msg, privatekey):
     # decoded_decrypted_msg = privatekey.decrypt(decoded_encrypted_msg)
     return decrypted
 
-
-
 class node:
 	def __init__(self, node_id):
 		#self.NBC=100;
@@ -91,7 +91,7 @@ class node:
 		#self.ring[]   #here we store information for every node, as its id, its address (ip:port) its public key and its balance
 
 	def validate_transaction(self):
-		
+
 		my_wallet = wallet.wallet()
 		#Define pk (Public Key) and sk (Secret Key)
 		sk = my_wallet.private_key

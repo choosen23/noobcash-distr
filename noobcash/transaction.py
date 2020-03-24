@@ -6,17 +6,26 @@ import Crypto
 import Crypto.Random
 from Crypto.Hash import SHA
 from Crypto.PublicKey import RSA
-from Crypto.Signature import PKCS1_v1_5
-
+from Crypto.Cipher import PKCS1_OAEP
 import requests
 from flask import Flask, jsonify, request, render_template
-
+import wallet
 import time
 import json
+import base64
+import hashlib
+
+
+
+def encrypt_message(a_message, key):
+    encryptor = PKCS1_OAEP.new(key)
+    encrypted = encryptor.encrypt(bytes(a_message, "utf8"))
+    # base64 encoded strings are database friendly
+    encoded_encrypted_msg = base64.b64encode(encrypted)
+    return encoded_encrypted_msg
 
 
 class Transaction:
-
     def __init__(self, sender_address, sender_private_key, recipient_address, value, prev_transactions):
 
         ##set
@@ -142,8 +151,11 @@ class Transaction:
 
     def sign_transaction(self, private_key):
         """ Sign transaction with private key """
-
-        return(private_key + "-signature")
+        """ We crypto our transaction using private key"""
+        private_key = wallet.wallet().private_key
+        message = self.sender_address + ' pais ' + str(self.amount) + ' NBC to ' + self.receiver_address
+        signature = encrypt_message(message,private_key)
+        return signature
 
 
 if __name__ == "__main__":
