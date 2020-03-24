@@ -119,6 +119,10 @@ class node:
 
 	def validate_transaction(self, transaction):
 
+		message = 
+		puclic_key = 
+		encrypted_message = 
+
 		#Define pk (Public Key) and sk (Secret Key)
 		sk = self.wallet.private_key
 		pk = self.wallet.public_key
