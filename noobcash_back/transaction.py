@@ -143,6 +143,8 @@ class Transaction:
     def sign_transaction(self, private_key):
         """ Sign transaction with private key """
 
+        message = self.sender_address + ' pais ' + str(self.amount) + ' NBC to ' + self.receiver_address
+        
         return(private_key + "-signature")
 
 
