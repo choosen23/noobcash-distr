@@ -15,10 +15,11 @@ parser.add_argument('-n', help='Init as coordinator, for N partipipants', type=i
 args = parser.parse_args()
 
 PARTICIPANTS = args.n
-connection_URL = f'http://127.0.0.1:{args.port}/init_coordinator' if PARTICIPANTS else f'http://127.0.0.1:{args.port}/init_node'
+connection_URL = f'http://127.0.0.1:{args.port}/init_coordinator' if PARTICIPANTS else f'http://127.0.0.1:{args.port}/init_simple_node'
 try:
 	response = requests.post(connection_URL, json={
 		'participants': PARTICIPANTS,
+		'port' : args.port
 	})
 	assert response.status_code == 200
 except Exception as e:
@@ -28,9 +29,14 @@ except Exception as e:
 while True:
 	cmd = input("> ")
 	#print(cmd)
-
 	if cmd == 'balance':
-		req = requests.get("http://127.0.0.1:5000/new_transaction")
+		continue
+	elif cmd == 'test':
+		response = requests.post('http://127.0.0.1:5000/', json={
+			'participants': 10,
+	})
+		print(response.json())
+		print(type(response.json()))
 	elif cmd == 'view':
 		print(URL)
 	elif cmd == "balance":

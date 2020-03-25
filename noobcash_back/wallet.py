@@ -78,7 +78,7 @@ class wallet:
 
         # randomly creates a public key
         public = "%032x" % random.getrandbits(256)
-        #using public key and sha256 we create private key
+        #using public key and sha256 we create private keyz
         private = hashlib.sha256(public.encode('utf8')).hexdigest()
   		
         self.public_key = public

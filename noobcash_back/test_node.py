@@ -96,7 +96,7 @@ class node:
 
 		self.ring = None
 		self.blockchain = None
-
+		self.current_id_count = None
 		if num_nodes:
 			self.boostrap_node = True
 			print("Boostrap node")

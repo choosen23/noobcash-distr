@@ -92,7 +92,7 @@ class Transaction:
         ##############################################
 
     def from_json(self, jsonfile):
-
+        pass
 
 
     def calculate_transaction_id(self):
