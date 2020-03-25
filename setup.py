@@ -12,6 +12,6 @@ setup(
     'flask_cors',
     'netifaces'
     'blockchain',
-    'crypto',
+    'pycryptodome',
     'Datetime']
 )
