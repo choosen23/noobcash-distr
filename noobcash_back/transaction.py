@@ -4,7 +4,7 @@ from wallet import generate_keys
 from collections import OrderedDict
 
 import binascii
-
+from Crypto.Signature import PKCS1_v1_5
 import Crypto
 import Crypto.Random
 from Crypto.Hash import SHA
@@ -17,16 +17,6 @@ import time
 import json
 import base64
 import hashlib
-
-
-
-def encrypt_message(a_message, key):
-    encryptor = PKCS1_OAEP.new(key)
-    encrypted = encryptor.encrypt(bytes(a_message, "utf8"))
-    # base64 encoded strings are database friendly
-    encoded_encrypted_msg = base64.b64encode(encrypted)
-    return encoded_encrypted_msg
-
 
 class Transaction:
 
@@ -57,7 +47,7 @@ class Transaction:
         self.text = self.create_transaction_text()
 
         # The transaction with the sender's signature
-        #self.signature = self.sign_transaction(sender_private_key)
+        self.signature = self.sign_transaction(sender_private_key)
 
 
 
@@ -137,9 +127,9 @@ class Transaction:
         """ Sign transaction with private key """
         """ We crypto our transaction using private key """
 
-        message = self.text
-        signature = encrypt_message(message, private_key)
-
+        message = self.text.encode('utf8')
+        signer = PKCS1_v1_5.new(private_key)
+        signature = signer.sign(message)
         return signature
 
 

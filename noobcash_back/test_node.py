@@ -106,28 +106,15 @@ class node:
 			self.ring[0]['public_key'] = self.wallet.public_key
 
 
-	# def validate_transaction(self, transaction):
+	def validate_transaction(self, transaction):
 
-	# 	message = 
-	# 	puclic_key = 
-	# 	encrypted_message = 
-
-	# 	#Define pk (Public Key) and sk (Secret Key)
-	# 	sk = self.wallet.private_key
-	# 	pk = self.wallet.public_key
-
-	# 	#We define the message
-	# 	message = transaction.text
-	# 	encrypted_msg = encrypt_message(message, pk)
-	# 	decrypted_msg = decrypt_message(encrypted_msg, sk)
-
-	# 	# print("%s " % (sk.exportKey()))
-	# 	# print("%s " % (pk.exportKey()))
-	# 	print("Original content: %s " % (message))
-	# 	print("Encrypted message: %s " % (encrypted_msg))
-	# 	print("Decrypted message: %s " % (decrypted_msg))
-
-	# 	return 0
+	
+		verifier = PKCS1_v1_5.new(transaction.public_key_sender)
+		if verifier.verify(transaction.message,transaction.signature):
+			print("true")
+		else:
+			print("false")
+		return 0
 
 
 	def create_wallet(self):

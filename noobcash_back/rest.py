@@ -47,7 +47,7 @@ def init_node():
     global simple_node
     simple_node = nd.node()
     data = {}
-    data['public_key'] = simple_node.wallet.public_key
+    data['public_key'] = simple_node.wallet.public_key_str
     data['ip'] = node_ip
     data['port'] = node_port
     response = requests.post(f'http://{settings.COORDINATOR_IP}:{settings.COORDINATOR_PORT}/single_node_details', json=data)
