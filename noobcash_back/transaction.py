@@ -1,4 +1,5 @@
 from wallet import rsa_to_string
+from wallet import generate_keys
 
 from collections import OrderedDict
 
@@ -52,11 +53,13 @@ class Transaction:
         # A list of Transaction Output
         self.transaction_outputs = self.calculate_transaction_outputs()
 
-        # The transaction with the sender's signature
-        self.signature = self.sign_transaction(sender_private_key)
-
         # Text that contains the transaction info
         self.text = self.create_transaction_text()
+
+        # The transaction with the sender's signature
+        #self.signature = self.sign_transaction(sender_private_key)
+
+
 
 
     def calculate_transaction_id(self):
@@ -65,20 +68,19 @@ class Transaction:
 
         current_time = str(time.time()).split('.')
         current_time = current_time[0] + current_time[1]
-        transaction_id = "TR" + str(current_time) + str(self.sender_address)
+        transaction_id = "TR" + str(current_time) + rsa_to_string(self.sender_address)
 
         return(transaction_id)
 
-    def create_transaction_text():
+    def create_transaction_text(self):
         sender = rsa_to_string(self.sender_address)
         receiver = rsa_to_string(self.receiver_address)
 
-        text = 'Transaction ID: ' + self.transaction_id + '\n'
+        text = 'Transaction ID: ' + self.transaction_id + '\n' + '\n'
         text += sender + '\n'
-        text += 'pays ' + str(self.amount) + ' to'
+        text += '\n' + 'pays ' + str(self.amount) + ' NBC to' + '\n' + '\n'
         text += receiver + '\n'
-        text += 'Signature: ' + self.signature.decode("utf-8")[:-1] + '\n'
-        
+       
         return text
 
     def calculate_transaction_outputs(self):
@@ -143,7 +145,17 @@ class Transaction:
 
 if __name__ == "__main__":
 
-    with open('./TXOexample/someTXOs.json', encoding='utf8') as trs:
-	    trs = json.load(trs)
+    sender, senderpr = generate_keys()
+    receiver, _ = generate_keys()
 
-    transaction = Transaction("1", "privatekey2", "recipient3", 100, trs)
+    trs = []
+    new_tr = {}
+    new_tr['transaction_id'] = "13323232323232"
+    new_tr['wallet_id'] = sender
+    new_tr['type'] = 'UTXO'
+    new_tr['amount'] = 100000
+    trs.append(new_tr)
+
+    t = Transaction(sender, senderpr, receiver, 100, trs)
+
+    print(t.text)
