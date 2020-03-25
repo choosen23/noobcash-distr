@@ -129,7 +129,8 @@ class Transaction:
 
         message = self.text.encode('utf8')
         signer = PKCS1_v1_5.new(private_key)
-        signature = signer.sign(message)
+        h = SHA.new(message)
+        signature = signer.sign(h)
         return signature
 
 

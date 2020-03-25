@@ -103,14 +103,14 @@ class node:
 
 			self.ring[0]['ip'] = coordinator['ip']
 			self.ring[0]['port'] = coordinator['port']
-			self.ring[0]['public_key'] = self.wallet.public_key
+			self.ring[0]['public_key'] = self.wallet.public_key.exportKey('PEM')
 
 
 	def validate_transaction(self, transaction):
 
-	
+		h = SHA.new(transaction.message)
 		verifier = PKCS1_v1_5.new(transaction.public_key_sender)
-		if verifier.verify(transaction.message,transaction.signature):
+		if verifier.verify(h,transaction.signature):
 			print("true")
 		else:
 			print("false")
