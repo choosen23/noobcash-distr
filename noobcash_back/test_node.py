@@ -104,8 +104,10 @@ class node:
 			self.node_id = 0
 
 			#create genesis block
-			# prev hash = 1 ,  nonce = 0 , trans ( 0 --> public key boostrap(self.wallet)) gives 100*num_nodes NBC
+			# prev hash = 1 ,  nonce = 0 , trans ( 0 --> public key boostrap(self.wallet) ) gives 100*num_nodes NBC
 			#self.blockchain = [genesis block]
+
+			genesis_block = self.create_genesis_block()
 
 			self.num_nodes = num_nodes
 			self.current_id_count = 0
@@ -118,6 +120,10 @@ class node:
 
 
 	def validate_transaction(self, transaction):
+
+		message = 
+		puclic_key = 
+		encrypted_message = 
 
 		#Define pk (Public Key) and sk (Secret Key)
 		sk = self.wallet.private_key
@@ -165,16 +171,15 @@ class node:
 		if self.validate_transaction(new_transaction):
 			self.open_transactions.append(new_transaction)
 
-			#capacity must be defined somewhere
 			if len(open_transactions) == settings.capacity:
 				previous_hash = self.blockchain.getHashOfTheLastBlock()
 
 				block_content = str(previous_hash) + '\n'
 				block_content += transactions_text(self.open_transactions)
 				
-				#capacity must be defined somewhere
 				nonce = self.mine_block(block_content, settings.difficulty)
 
+				# creates the new block that found
 				new_block = Block(previous_hash, nonce, self.open_transactions)
 
 				broadcast_block(new_block)
@@ -199,6 +204,16 @@ class node:
 			except Exception as ex:
 				print("nonce reached max value")
 				raise ex
+
+			#create genesis block
+			# prev hash = 1 ,  nonce = 0 , trans ( 0 --> public key boostrap(self.wallet) ) gives 100*num_nodes NBC
+			#self.blockchain = [genesis block]
+
+	def create_genesis_block(wallet.public_key_str):
+		prev_has = 1
+		nonce = 0
+		
+
 
 
 	def broadcast_block(self):
