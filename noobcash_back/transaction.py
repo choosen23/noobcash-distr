@@ -146,7 +146,7 @@ class Transaction:
         signer = PKCS1_v1_5.new(private_key)
         h = SHA.new(message)
         signature = signer.sign(h)
-
+        
         return signature
 
 

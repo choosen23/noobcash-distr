@@ -32,11 +32,8 @@ while True:
 	if cmd == 'balance':
 		continue
 	elif cmd == 'test':
-		response = requests.post('http://127.0.0.1:5000/', json={
-			'participants': 10,
-	})
-		print(response.json())
-		print(type(response.json()))
+		response = requests.post(f'http://127.0.0.1:{args.port}/',json={'message':'a simple message'})
+		print("nice")
 	elif cmd == 'view':
 		print(URL)
 	elif cmd == "balance":

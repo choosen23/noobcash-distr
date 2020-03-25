@@ -13,7 +13,10 @@ import pickle
 # import wallet
 # import transaction
 
+from Crypto.Signature import PKCS1_v1_5
+from Crypto.Hash import SHA
 
+from Crypto.PublicKey import RSA
 app = Flask(__name__)
 CORS(app)
 app.config["DEBUG"] = True
@@ -47,7 +50,8 @@ def init_node():
     global simple_node
     simple_node = nd.node()
     data = {}
-    data['public_key'] = simple_node.wallet.public_key_str
+    print(type(simple_node.wallet.public_key.exportKey('PEM')))
+    data['public_key'] = simple_node.wallet.public_key.exportKey('PEM').decode('utf-8')
     data['ip'] = node_ip
     data['port'] = node_port
     response = requests.post(f'http://{settings.COORDINATOR_IP}:{settings.COORDINATOR_PORT}/single_node_details', json=data)
@@ -60,8 +64,8 @@ def node_details():
     global bootstrap
     bootstrap.current_id_count += 1
     data = request.json
+    data['public_key'] =data['public_key'].encode('utf8')
     bootstrap.ring[bootstrap.current_id_count] = data
-    print(bootstrap.ring)
     return {'id': bootstrap.current_id_count},200
 
 @app.route('/send_list_of_nodes', methods=['POST'])
@@ -87,6 +91,16 @@ def accept_and_verify_transaction():
     # given a transaction in body with json
     # import test_mnode as node
     # node.add_transaction_to_block(transaction object) = True or False
+    global bootstrap
+    data = request.json
+    h = SHA.new(data['message'].encode('utf8'))
+    x = bootstrap.ring[1]['public_key']
+    pk = RSA.importKey(x)
+    verifier = PKCS1_v1_5.new(pk)
+    if verifier.verify(h,data['signature'].encode('latin-1')):
+        print("true")
+    else:
+        print("false")
     return '',200
 
 @app.route('/view_last_transactions', methods=['GET'])
@@ -103,11 +117,19 @@ def show_balance():
 
 @app.route('/', methods=['POST'])
 def index():
-    res = request.json
-    print(res)
-    print(type(res))
-    x = {'a': 2}
-    return jsonify(x),200
+    global simple_node
+    print(request.json['message'])
+    message = request.json['message'].encode('utf8')
+    h = SHA.new(message)
+    signer = PKCS1_v1_5.new(simple_node.wallet.private_key)
+    signature = signer.sign(h)
+    decoded_signature = signature.decode('latin-1')
+    data = {
+        'message': request.json['message'],
+        'signature': decoded_signature
+    }
+    response = requests.post(f'http://{settings.COORDINATOR_IP}:{settings.COORDINATOR_PORT}/accept_and_verify_transaction', json=data)
+    return '',200
 
 
 # run it once fore every node
