@@ -46,8 +46,6 @@ def rsa_to_string(rsa_key):
     key = key[1]
     key = key.split('=')
     key = key[1]
-    print(key)
-    print()
 
     return key
 
@@ -87,11 +85,13 @@ class wallet:
 
         self.public_key , self.private_key = generate_keys()
 
+        self.public_key_str = rsa_to_string(self.public_key)
+
         print('public key')
-        rsa_to_string(self.public_key)
+        print(self.public_key_str)
 
         print('private key')
-        rsa_to_string(self.private_key)
+        print(rsa_to_string(self.private_key))
 
 
 
