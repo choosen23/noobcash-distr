@@ -83,26 +83,12 @@ class wallet:
         # print("Encrypted message: %s " % (encrypted_msg))
         # print("Decrypted message: %s " % (decrypted_msg))
 
-<<<<<<< HEAD
-        # randomly creates a public key
-        public = "%032x" % random.getrandbits(256)
-        #using public key and sha256 we create private keyz
-        private = hashlib.sha256(public.encode('utf8')).hexdigest()
-  		
-        self.public_key = public
-        self.private_key = private
-
-        print("New wallet is created.")
-        print("Wallet public key:", self.public_key)
-        print("Wallet private key:", self.private_key)
-=======
         self.public_key , self.private_key = generate_keys()
 
         self.public_key_str = rsa_to_string(self.public_key)
 
         print("New wallet was created with public key")
         print(self.public_key_str)
->>>>>>> d09077987e83782acf7bed0eef4a33b9c5cc8078
         print()
 
 
