@@ -21,7 +21,7 @@ def generate_keys():
     modulus_length = 256*4  # use larger value in production
     privatekey = RSA.generate(modulus_length, Random.new().read)
     publickey = privatekey.publickey()
-    return privatekey, publickey
+    return publickey, privatekey
 
 
 def encrypt_message(a_message, publickey):
@@ -33,13 +33,23 @@ def encrypt_message(a_message, publickey):
 
 
 def decrypt_message(encoded_encrypted_msg, privatekey):
-
     decryptor = PKCS1_OAEP.new(privatekey)
     decoded_encrypted_msg = base64.b64decode(encoded_encrypted_msg)
     decrypted = decryptor.decrypt(ast.literal_eval(str(decoded_encrypted_msg)))
 
-    # decoded_decrypted_msg = privatekey.decrypt(decoded_encrypted_msg)
     return decrypted
+
+def rsa_to_string(rsa_key):
+    key = str(rsa_key.export_key)
+    key = key.split(',')
+    key = key[0].split('(')
+    key = key[1]
+    key = key.split('=')
+    key = key[1]
+    print(key)
+    print()
+
+    return key
 
 
 class wallet:
@@ -64,7 +74,6 @@ class wallet:
     def generate_wallet(self):
         """ Generates a pair of public/private key using RSA algorithm """
 
-        privatekey, publickey = generate_keys()
         """ Example of use """
         # message = "Oh nana Oh nanana"
         # encrypted_msg = encrypt_message(message, publickey)
@@ -76,18 +85,15 @@ class wallet:
         # print("Encrypted message: %s " % (encrypted_msg))
         # print("Decrypted message: %s " % (decrypted_msg))
 
-        # randomly creates a public key
-        public = "%032x" % random.getrandbits(256)
-        #using public key and sha256 we create private key
-        private = hashlib.sha256(public.encode('utf8')).hexdigest()
-  		
-        self.public_key = public
-        self.private_key = private
+        self.public_key , self.private_key = generate_keys()
 
-        print("New wallet is created.")
-        print("Wallet public key:", self.public_key)
-        print("Wallet private key:", self.private_key)
-        print()
+        print('public key')
+        rsa_to_string(self.public_key)
+
+        print('private key')
+        rsa_to_string(self.private_key)
+
+
 
     def balance(self):
         """ Wallet balance is calculated by adding all UTXOs having this wallet as a reciever """
@@ -109,5 +115,4 @@ class wallet:
 if __name__ == '__main__':
 
     ros_wallet = wallet()
-    ros_wallet.showBalance()
-    
+    #ros_wallet.showBalance()
