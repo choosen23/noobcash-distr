@@ -87,12 +87,9 @@ class wallet:
 
         self.public_key_str = rsa_to_string(self.public_key)
 
-        print('public key')
+        print("New wallet was created with public key")
         print(self.public_key_str)
-
-        print('private key')
-        print(rsa_to_string(self.private_key))
-
+        print()
 
 
     def balance(self):
@@ -101,13 +98,12 @@ class wallet:
         acc_balance = 0
 
         for tr in self.transactions:
-            if tr['wallet_id'] == self.public_key and tr['type'] == 'UTXO':
+            if tr['wallet_id'] == self.public_key_str and tr['type'] == 'UTXO':
                 acc_balance += tr['amount']
 
         return acc_balance
 
     def showBalance(self):
-        print("Wallet public key:", self.public_key)
         print("Balance:", self.balance(), "NBC")
         print()
 
@@ -115,4 +111,4 @@ class wallet:
 if __name__ == '__main__':
 
     ros_wallet = wallet()
-    #ros_wallet.showBalance()
+    ros_wallet.showBalance()
