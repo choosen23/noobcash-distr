@@ -18,6 +18,17 @@ import json
 import base64
 import hashlib
 
+def sha_hex(text):
+	""" Hash the text with SHA encryption
+		The output is the hashed text in binary form """
+
+	byte_string = text.encode()
+	hashed = SHA.new(byte_string)
+	hex_string = hashed.hexdigest()
+
+	return hex_string
+
+
 class Transaction:
 
     def __init__(self, sender_address, sender_private_key, recipient_address, value, prev_transactions):
@@ -43,14 +54,14 @@ class Transaction:
         # A list of Transaction Output
         self.transaction_outputs = self.calculate_transaction_outputs()
 
-        # Text that contains the transaction info
-        self.text = self.create_transaction_text()
+        # Text that contains the transaction info, the sender will sign it
+        self.to_be_singed = self.create_transaction_for_signing()
 
         # The transaction with the sender's signature
-        self.signature = self.sign_transaction(sender_private_key)
+        self.signature = self.sign_transaction(self.to_be_singed, sender_private_key)
 
-
-
+        # Text that contains the transaction info that will be put in the block
+        self.text = self.to_be_singed + '\nSignature\n' + str(self.signature) + '\n'
 
     def calculate_transaction_id(self):
         """ Finds a unique id to give to the transaction by combining
@@ -58,17 +69,21 @@ class Transaction:
 
         current_time = str(time.time()).split('.')
         current_time = current_time[0] + current_time[1]
-        transaction_id = "TR" + str(current_time) + rsa_to_string(self.sender_address)
+        unique_num = str(current_time) + rsa_to_string(self.sender_address)
+        transaction_id = "TR" + sha_hex(unique_num)
 
         return(transaction_id)
 
-    def create_transaction_text(self):
+    def create_transaction_for_signing(self):
         sender = rsa_to_string(self.sender_address)
         receiver = rsa_to_string(self.receiver_address)
 
-        text = 'Transaction ID: ' + self.transaction_id + '\n' + '\n'
+        text = 'Transaction ID \n'
+        text += self.transaction_id + '\n' + '\n'
+        text += 'Sender \n'
         text += sender + '\n'
         text += '\n' + 'pays ' + str(self.amount) + ' NBC to' + '\n' + '\n'
+        text += 'Receiver \n'
         text += receiver + '\n'
        
         return text
@@ -123,13 +138,15 @@ class Transaction:
         return output_trs
 
 
-    def sign_transaction(self, private_key):
+    def sign_transaction(self, message, private_key):
         """ Sign transaction with private key """
         """ We crypto our transaction using private key """
 
-        message = self.text.encode('utf8')
+        message = message.encode('utf8')
         signer = PKCS1_v1_5.new(private_key)
-        signature = signer.sign(message)
+        h = SHA.new(message)
+        signature = signer.sign(h)
+
         return signature
 
 

@@ -44,16 +44,16 @@ def correct_block(hash, difficulty):
 	
 	return False
 
-def transactions_text(transactions):
-	""" Creates a text with the transactions
+def create_block_content(previous_hash, transactions):
+	""" Creates a text with the hash of the previous block and the transactions
 		This text will be placed in the corresponding block """
-		
-	text = []
+
+	block_content = str(previous_hash) + '\n'
 
 	for tr in transactions:
-		text += tr.text + '\n'
+		block_content += tr.text
 
-	return text
+	return block_content
 
 def encrypt_message(a_message, publickey):
     encryptor = PKCS1_OAEP.new(publickey)
@@ -107,14 +107,15 @@ class node:
 
 
 	def validate_transaction(self, transaction):
+		public_key = transaction.sender_address
+		message = transaction.text
+		signature = transaction.signature
 
-	
-		verifier = PKCS1_v1_5.new(transaction.public_key_sender)
-		if verifier.verify(transaction.message,transaction.signature):
+		verifier = PKCS1_v1_5.new(public_key)
+		if verifier.verify(message, signature):
 			print("true")
 		else:
 			print("false")
-		return 0
 
 
 	def create_wallet(self):
@@ -146,10 +147,9 @@ class node:
 			self.open_transactions.append(new_transaction)
 
 			if len(open_transactions) == settings.capacity:
-				previous_hash = self.blockchain.getHashOfTheLastBlock()
+				previous_hash = self.findPrevHash() # must be defined
 
-				block_content = str(previous_hash) + '\n'
-				block_content += transactions_text(self.open_transactions)
+				block_content = create_block_content(previous_hash, open_transactions)
 				
 				nonce = self.mine_block(block_content, settings.difficulty)
 
@@ -193,8 +193,40 @@ class node:
 		pass
 
 
-	def valid_proof(self, block, difficulty):
-		pass
+	def valid_proof(self, block):
+		""" Checks if the broadcasted new block is valid """
+
+		difficulty = settings.difficulty
+		transactions = block.listOfTransactions
+		previous_hash = block.previousHash
+		block_hash = block.hash
+		nonce = block.nonce
+
+		# Check if the hash of the block is its true hash
+		block_content = create_block_content(previous_hash, transactions)
+		hashed = sha(block_content + str(nonce))
+		if not (hashed == block_hash):
+			print("Block hash is fake")
+
+			return False
+
+		# Check the proof of work
+		if not correct_block(hashed, difficulty):
+			print("The block does not achieves the needed proof of work")
+
+			return False
+
+		# Check if the transactions are valid
+		for tr in transactions:
+			if not validate_transaction(tr):
+				print("Transaction with ID", tr.transaction_id, "is not valid")
+
+				return False
+
+
+		# Block is valid
+		return True
+
 
 
 	#concencus functions

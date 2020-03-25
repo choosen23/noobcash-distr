@@ -40,14 +40,19 @@ def decrypt_message(encoded_encrypted_msg, privatekey):
     return decrypted
 
 def rsa_to_string(rsa_key):
-    key = str(rsa_key.export_key)
-    key = key.split(',')
-    key = key[0].split('(')
-    key = key[1]
-    key = key.split('=')
-    key = key[1]
+    key = rsa_key.exportKey("PEM")
+    key = key.decode("utf-8")
+    key = key.split('\n')
+    key = key[:-1]
+    key = key[1:]
 
-    return key
+    #key = list(map(lambda k : k + '\n', key))
+
+    str_key = ''
+    for k in key:
+        str_key += k
+
+    return str_key
 
 
 class wallet:
