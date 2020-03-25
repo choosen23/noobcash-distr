@@ -1,3 +1,5 @@
+from wallet import rsa_to_string
+
 from collections import OrderedDict
 
 import binascii
@@ -29,17 +31,6 @@ class Transaction:
 
     def __init__(self, sender_address, sender_private_key, recipient_address, value, prev_transactions):
 
-        ##set
-
-        ##############################################
-        #ONLY FOR DEBUG
-        print()
-        print("previous transactions")
-        for t in prev_transactions:
-            print(t)
-        print()
-        ##############################################
-
         # The wallet's public key of the sender that contains the money
         self.sender_address = sender_address
 
@@ -51,9 +42,6 @@ class Transaction:
 
         # The amount that is about to be transfered
         self.amount = value
-
-        # Text that contains the transaction info
-        self.text = self.sender_address + ' pays ' + str(self.amount) + ' NBC to ' + self.receiver_address
 
         # The unique ID of the transaction
         self.transaction_id = self.calculate_transaction_id()
@@ -67,32 +55,8 @@ class Transaction:
         # The transaction with the sender's signature
         self.signature = self.sign_transaction(sender_private_key)
 
-
-        ##############################################
-        #ONLY FOR DEBUG
-        print("sender public key:", self.sender_address, "private key:", sender_private_key)
-        print("recipient:", self.receiver_address)
-        print("amount:", self.amount)
-        print()
-        print("Transaction ID:", self.transaction_id)
-        print()
-        print("signature:", self.signature)
-        print("new input transactions")
-        for t in self.transaction_inputs:
-            print(t)
-        print()
-        print("output transactions")
-        for t in self.transaction_outputs:
-            print(t)
-        print()
-        if self.canBeDone:
-            print("Transaction can be done")
-        else:
-            print("Transaction cannot be done")
-        ##############################################
-
-    def from_json(self, jsonfile):
-
+        # Text that contains the transaction info
+        self.text = self.create_transaction_text()
 
 
     def calculate_transaction_id(self):
@@ -105,6 +69,17 @@ class Transaction:
 
         return(transaction_id)
 
+    def create_transaction_text():
+        sender = rsa_to_string(self.sender_address)
+        receiver = rsa_to_string(self.receiver_address)
+
+        text = 'Transaction ID: ' + self.transaction_id + '\n'
+        text += sender + '\n'
+        text += 'pays ' + str(self.amount) + ' to'
+        text += receiver + '\n'
+        text += 'Signature: ' + self.signature.decode("utf-8")[:-1] + '\n'
+        
+        return text
 
     def calculate_transaction_outputs(self):
         """ Finds the UTXOs needed for the transaction

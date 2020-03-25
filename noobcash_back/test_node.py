@@ -55,18 +55,6 @@ def transactions_text(transactions):
 
 	return text
 
-
-
-
-def generate_keys():
-    # RSA modulus length must be a multiple of 256 and >= 1024
-    modulus_length = 256*4  # use larger value in production
-    privatekey = RSA.generate(modulus_length, Random.new().read)
-    publickey = privatekey.publickey()
-    return privatekey, publickey
-
-
-
 def encrypt_message(a_message, publickey):
     encryptor = PKCS1_OAEP.new(publickey)
     encrypted = encryptor.encrypt(bytes(a_message, "utf8"))
@@ -76,7 +64,6 @@ def encrypt_message(a_message, publickey):
 
 
 def decrypt_message(encoded_encrypted_msg, privatekey):
-
 	decryptor = PKCS1_OAEP.new(privatekey)
 	decoded_encrypted_msg = base64.b64decode(encoded_encrypted_msg)
 	decrypted = decryptor.decrypt(ast.literal_eval(str(decoded_encrypted_msg)))
@@ -119,28 +106,28 @@ class node:
 			self.ring[0]['public_key'] = self.wallet.public_key
 
 
-	def validate_transaction(self, transaction):
+	# def validate_transaction(self, transaction):
 
-		message = 
-		puclic_key = 
-		encrypted_message = 
+	# 	message = 
+	# 	puclic_key = 
+	# 	encrypted_message = 
 
-		#Define pk (Public Key) and sk (Secret Key)
-		sk = self.wallet.private_key
-		pk = self.wallet.public_key
+	# 	#Define pk (Public Key) and sk (Secret Key)
+	# 	sk = self.wallet.private_key
+	# 	pk = self.wallet.public_key
 
-		#We define the message
-		message = transaction.text
-		encrypted_msg = encrypt_message(message, pk)
-		decrypted_msg = decrypt_message(encrypted_msg, sk)
+	# 	#We define the message
+	# 	message = transaction.text
+	# 	encrypted_msg = encrypt_message(message, pk)
+	# 	decrypted_msg = decrypt_message(encrypted_msg, sk)
 
-		# print("%s " % (sk.exportKey()))
-		# print("%s " % (pk.exportKey()))
-		print("Original content: %s " % (message))
-		print("Encrypted message: %s " % (encrypted_msg))
-		print("Decrypted message: %s " % (decrypted_msg))
+	# 	# print("%s " % (sk.exportKey()))
+	# 	# print("%s " % (pk.exportKey()))
+	# 	print("Original content: %s " % (message))
+	# 	print("Encrypted message: %s " % (encrypted_msg))
+	# 	print("Decrypted message: %s " % (decrypted_msg))
 
-		return 0
+	# 	return 0
 
 
 	def create_wallet(self):
@@ -209,12 +196,10 @@ class node:
 			# prev hash = 1 ,  nonce = 0 , trans ( 0 --> public key boostrap(self.wallet) ) gives 100*num_nodes NBC
 			#self.blockchain = [genesis block]
 
-	def create_genesis_block(wallet.public_key_str):
+	def create_genesis_block(self):
 		prev_has = 1
 		nonce = 0
 		
-
-
 
 	def broadcast_block(self):
 		# MHTSOOOOO
@@ -241,7 +226,7 @@ class node:
 if __name__ == "__main__":
 
 	try:
-		node_id = int(sys.argv[1])
+		node_id = 0
 		my_node = node(node_id)
 
 	except Exception as ex:
