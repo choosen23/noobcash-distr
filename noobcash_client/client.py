@@ -8,6 +8,11 @@ Available commands:
 * `balance`                          View balance of the wallet (as of last validated block)
 * `help`                             Print help message
 * `exit`                             Exit client (will not stop server)
+==============================================================================================
+FOR DEVELOPERS
+===============================================================================================
+*`check id`							 See the id of this node
+*`check ring`						 See the dictionary with details of other nodes
 '''
 parser = argparse.ArgumentParser()
 parser.add_argument('port', help='port of the backend process', type=int)
@@ -30,20 +35,42 @@ while True:
 	cmd = input("> ")
 	#print(cmd)
 	if cmd == 'balance':
-		continue
+		print('mpika')
+		response = requests.get(f'http://127.0.0.1:{args.port}/show_balance')
 	elif cmd == 'test':
 		response = requests.post(f'http://127.0.0.1:{args.port}/',json={'message':'a simple message'})
 		print("nice")
 	elif cmd == 'view':
-		print(URL)
-	elif cmd == "balance":
-		continue
+		continue  
 	elif cmd == "help":
 		print(help_message)
 	elif cmd.startswith('t'):
 		args = cmd.split()
+	elif cmd == 'exit':
+		exit(-1)
 	elif cmd == exit:
 		exit(-1)
+	#=======================================================
+	#		FOR DEVELOPERS
+	#=======================================================
+	elif cmd == "check ring" and PARTICIPANTS:
+		response = requests.get(f'http://127.0.0.1:{args.port}/test/bootstrap/check_ring')
+		res = response.json()
+		to_show = []
+		for x in res:
+			x['public_key']=x['public_key'].encode('utf8')
+		print(res)
+		continue
+	elif cmd == "check ring":
+		response = requests.get(f'http://127.0.0.1:{args.port}/test/simple_node/check_ring')
+		res = response.json()
+		to_show = []
+		for x in res:
+			x['public_key']=x['public_key'].encode('utf8')
+		print(res)	
+	elif cmd == "check id":
+		response = requests.get(f'http://127.0.0.1:{args.port}/test/check_id')
+
 	else:
 		print("Uknown Command")
 		print(help_message)

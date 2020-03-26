@@ -4,14 +4,12 @@ from transaction import Transaction
 from block import create_block_content
 from block import Block
 import settings
-
 import binascii
 import Crypto
 from Crypto import Random
 from Crypto.Hash import SHA
 from Crypto.PublicKey import RSA
 from Crypto.Signature import PKCS1_v1_5
-from Crypto.Cipher import PKCS1_OAEP
 import random
 import hashlib
 import json
@@ -20,7 +18,6 @@ from urllib.parse import urlparse
 from uuid import uuid4
 import base64
 import ast
-from Crypto.Hash import SHA
 import sys
 
 """ Define some functions that is needed """
@@ -61,12 +58,12 @@ class node:
 		self.current_id_count = None
 
 		self.unspent_transactions = None
-
+		self.num_nodes = None
 		if num_nodes:
 			self.boostrap_node = True
 			print("Boostrap node")
 
-			self.node_id = 0
+			self.id = 0
 
 			self.num_nodes = num_nodes
 			
@@ -78,6 +75,7 @@ class node:
 
 			self.ring = [dict() for x in range(num_nodes)] # here we store information for every node, as its id, its address (ip:port)
 
+			self.ring[0]['id'] = self.id
 			self.ring[0]['ip'] = coordinator['ip']
 			self.ring[0]['port'] = coordinator['port']
 			self.ring[0]['public_key'] = self.wallet.public_key.exportKey('PEM')
