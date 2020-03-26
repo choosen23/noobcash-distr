@@ -166,6 +166,8 @@ class node:
 
 		return my_wallet
 
+	def wallet_balance(self):
+		return self.wallet.balance()
 
 	def show_wallet_balance(self):
 		self.wallet.showBalance()
