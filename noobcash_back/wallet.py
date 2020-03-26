@@ -18,7 +18,7 @@ import ast
 
 def generate_keys():
     # RSA modulus length must be a multiple of 256 and >= 1024
-    modulus_length = 256*4  # use larger value in production
+    modulus_length = 256*4
     privatekey = RSA.generate(modulus_length, Random.new().read)
     publickey = privatekey.publickey()
     
@@ -30,8 +30,6 @@ def rsa_to_string(rsa_key):
     key = key.split('\n')
     key = key[:-1]
     key = key[1:]
-
-    #key = list(map(lambda k : k + '\n', key))
 
     str_key = ''
     for k in key:
@@ -50,28 +48,10 @@ class wallet:
 
         self.generate_wallet()
 
-        # self_address
-
-        with open('./TXOexample/someTXOs.json', encoding='utf8') as trs:
-            trs = json.load(trs)
-
-        self.transactions = trs
-
-        # self.transactions
+        self.transactions = None
 
     def generate_wallet(self):
         """ Generates a pair of public/private key using RSA algorithm """
-
-        """ Example of use """
-        # message = "Oh nana Oh nanana"
-        # encrypted_msg = encrypt_message(message, publickey)
-        # decrypted_msg = decrypt_message(encrypted_msg, privatekey)
-
-        # print("%s " % (privatekey.exportKey()))
-        # print("%s " % (publickey.exportKey()))
-        # print(" Original content: %s " % (message))
-        # print("Encrypted message: %s " % (encrypted_msg))
-        # print("Decrypted message: %s " % (decrypted_msg))
 
         self.public_key , self.private_key = generate_keys()
 

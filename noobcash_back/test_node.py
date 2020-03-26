@@ -66,10 +66,6 @@ class node:
 			self.id = 0
 
 			self.num_nodes = num_nodes
-			
-			genesis_block = self.create_genesis_block()
-
-			self.blockchain = [genesis_block]
 
 			self.current_id_count = 0
 
@@ -79,6 +75,12 @@ class node:
 			self.ring[0]['ip'] = coordinator['ip']
 			self.ring[0]['port'] = coordinator['port']
 			self.ring[0]['public_key'] = self.wallet.public_key.exportKey('PEM')
+
+			genesis_block = self.create_genesis_block()
+
+			self.blockchain = [genesis_block]
+
+			self.wallet.transactions = self.unspent_transactions
 
 
 	def validate_transaction(self, transaction):
@@ -112,7 +114,7 @@ class node:
 
 			if tr['wallet_id'] == sender:
 				available_amount += tr['amount']
-			
+
 			else:
 				print("Input unspent transactions contain utxos that are not belong to the sender")
 
@@ -233,11 +235,11 @@ class node:
 
 			try:
 				nonce += 1
-						
+
 			except Exception as ex:
 				print("nonce reached max value")
 				raise ex
-		
+
 
 	def broadcast_block(self):
 		# MHTSOOOOO
@@ -252,7 +254,8 @@ class node:
 		return prev.hash
 
 	def show_blockchain(self):
-		for block in self.blockchain:
+		for i, block in enumerate(self.blockchain):
+			print('BLOCK', i, '\n')
 			print(block)
 
 
