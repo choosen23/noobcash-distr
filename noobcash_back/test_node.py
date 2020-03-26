@@ -55,25 +55,8 @@ def create_block_content(previous_hash, transactions):
 
 	return block_content
 
-def encrypt_message(a_message, publickey):
-    encryptor = PKCS1_OAEP.new(publickey)
-    encrypted = encryptor.encrypt(bytes(a_message, "utf8"))
-    # base64 encoded strings are database friendly
-    encoded_encrypted_msg = base64.b64encode(encrypted)
-    return encoded_encrypted_msg
-
-
-def decrypt_message(encoded_encrypted_msg, privatekey):
-	decryptor = PKCS1_OAEP.new(privatekey)
-	decoded_encrypted_msg = base64.b64decode(encoded_encrypted_msg)
-	decrypted = decryptor.decrypt(ast.literal_eval(str(decoded_encrypted_msg)))
-
-	# decoded_decrypted_msg = privatekey.decrypt(decoded_encrypted_msg)
-	return decrypted
-
 class node:
 	def __init__(self, num_nodes = 0, coordinator = {}):
-		#self.NBC=100;
 
 		self.node_id = None
 
@@ -82,19 +65,22 @@ class node:
 		self.boostrap_node = False
 
 		self.ring = None
+
 		self.blockchain = None
+
 		self.current_id_count = None
+
+		self.unspent_transactions = []
+
 		if num_nodes:
 			self.boostrap_node = True
 			print("Boostrap node")
 
 			self.node_id = 0
-
-			#create genesis block
-			# prev hash = 1 ,  nonce = 0 , trans ( 0 --> public key boostrap(self.wallet) ) gives 100*num_nodes NBC
-			#self.blockchain = [genesis block]
-
+			
 			genesis_block = self.create_genesis_block()
+
+			self.blockchain = [genesis_block]
 
 			self.num_nodes = num_nodes
 			self.current_id_count = 0
@@ -107,18 +93,78 @@ class node:
 
 
 	def validate_transaction(self, transaction):
-		public_key = transaction.sender_address
+		""" When a transaction is received, it needs to be verified first """
+		
+		sender_public_key = transaction.sender_address
+
+		# Check if it is signed by the sender
 		message = transaction.text
 		signature = transaction.signature
-
 		h = SHA.new(message)
-		verifier = PKCS1_v1_5.new(public_key)
-		if verifier.verify(h, signature):
-			print("true")
-			return True
-		else:
-			print("false")
+		verifier = PKCS1_v1_5.new(sender_public_key)
+
+		if not verifier.verify(h, signature):
+			print("The transaction have not been signed by the sender")
+
 			return False
+
+		# Chech if there are enough previous unspent transactions of the sender in order to pay the receiver the transaction amount
+		sender = transaction.sender_str
+		amount = transaction.amount
+		transaction_input = transaction.transaction_input
+		transaction_output = transaction.transaction_output
+
+		available_amount = 0
+		for tr in transaction_input:
+			if tr not in self.unspent_transactions:
+				print("Input unspent transaction has already been spent")
+
+				return False
+
+			if tr['wallet_id'] == sender:
+				available_amount += tr['amount']
+			
+			else:
+				print("Input unspent transactions contain utxos that are not belong to the sender")
+
+				return False
+
+		if available_amount < amount:
+			print("Input unspent transactions are not enough for the transaction")
+
+			return False
+
+		# Check if the unspent transactions output is correct
+		change = available_amount - amount
+		receiver = transaction.receiver_str
+		for tr in transaction_output:
+			if tr['wallet_id'] == sender:
+				if tr['amount'] != change:
+					print("Sender's utxo does not contains the propper amount")
+
+					return False
+
+			if tr['wallet_id'] == receiver:
+				if tr['amount'] != amount:
+					print("Receiver's utxo does not contains the propper amount")
+
+					return False
+
+			if len(transaction_output) > 2:
+				print("Output unspent transactions are more than two")
+
+				return False
+
+
+			# Transaction is valid
+
+			# We remove the transaction input unspent transactions cause now they are spent
+			self.unspent_transactions = list(filter(lambda utxo: utxo not in transaction_input, self.unspent_transactions))
+
+			# We add the new unspent transactions to the list
+			self.unspent_transactions = list(np.concatenate((self.unspent_transactions, transaction_output), axis = 0))
+
+			return True
 
 
 	def create_wallet(self):
@@ -131,6 +177,25 @@ class node:
 
 	def show_wallet_balance(self):
 		self.wallet.showBalance()
+
+		def create_genesis_block(self):
+		""" The first block of the blockhain """
+
+		prev_has = "1"
+		nonce = 0
+		sender = "0"
+		sender_private_key = None
+		receiver = self.wallet.public_key
+		amount = 100 * self.num_nodes
+		prev_transactions = []
+
+		genesis_transaction  = Transaction(sender, sender_private_key, receiver, amount, prev_transactions, genesis_transaction = True)
+
+		self.unspent_transactions = genesis_transaction.transaction_output
+
+		genesis_block = Block(prev_has, nonce, [genesis_transaction])
+
+		return genesis_block
 
 	
 	def register_node_to_ring():
@@ -181,14 +246,6 @@ class node:
 			except Exception as ex:
 				print("nonce reached max value")
 				raise ex
-
-			#create genesis block
-			# prev hash = 1 ,  nonce = 0 , trans ( 0 --> public key boostrap(self.wallet) ) gives 100*num_nodes NBC
-			#self.blockchain = [genesis block]
-
-	def create_genesis_block(self):
-		prev_has = 1
-		nonce = 0
 		
 
 	def broadcast_block(self):

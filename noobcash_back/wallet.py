@@ -21,23 +21,8 @@ def generate_keys():
     modulus_length = 256*4  # use larger value in production
     privatekey = RSA.generate(modulus_length, Random.new().read)
     publickey = privatekey.publickey()
+    
     return publickey, privatekey
-
-
-def encrypt_message(a_message, publickey):
-    encryptor = PKCS1_OAEP.new(publickey)
-    encrypted = encryptor.encrypt(bytes(a_message, "utf8"))
-    # base64 encoded strings are database friendly
-    encoded_encrypted_msg = base64.b64encode(encrypted)
-    return encoded_encrypted_msg
-
-
-def decrypt_message(encoded_encrypted_msg, privatekey):
-    decryptor = PKCS1_OAEP.new(privatekey)
-    decoded_encrypted_msg = base64.b64decode(encoded_encrypted_msg)
-    decrypted = decryptor.decrypt(ast.literal_eval(str(decoded_encrypted_msg)))
-
-    return decrypted
 
 def rsa_to_string(rsa_key):
     key = rsa_key.exportKey("PEM")
