@@ -68,7 +68,7 @@ class wallet:
         acc_balance = 0
 
         for tr in self.transactions:
-            if tr['wallet_id'] == self.public_key_str and tr['type'] == 'UTXO':
+            if tr['wallet_id'] == self.public_key_str:
                 acc_balance += tr['amount']
 
         return acc_balance
