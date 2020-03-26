@@ -36,8 +36,10 @@ class Transaction:
         # The wallet's public key of the sender that contains the money
         self.sender_address = sender_address
 
-        # The wallet's public key of the sender that contains the money
-        self.sender_str = rsa_to_string(sender_address)
+        if genesis_transaction:
+            self.sender_str = sender_address
+        else:
+            self.sender_str = rsa_to_string(sender_address)
 
         # The wallet's public key of the recipient of the money
         self.receiver_address = recipient_address
@@ -72,6 +74,7 @@ class Transaction:
         if genesis_transaction:
             """ If this is the first transaction of the system that is inside the genesis block """
 
+            first_unspent = {}
             first_unspent['transaction_id'] = self.transaction_id
             first_unspent['wallet_id'] = self.receiver_str
             first_unspent['amount'] = self.amount

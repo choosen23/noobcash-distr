@@ -1,7 +1,8 @@
-import block
 import wallet
 import transaction
 from transaction import Transaction
+from block import create_block_content
+from block import Block
 import settings
 
 import binascii
@@ -44,17 +45,6 @@ def correct_block(hash, difficulty):
 	
 	return False
 
-def create_block_content(previous_hash, transactions):
-	""" Creates a text with the hash of the previous block and the transactions
-		This text will be placed in the corresponding block """
-
-	block_content = str(previous_hash) + '\n'
-
-	for tr in transactions:
-		block_content += tr.text
-
-	return block_content
-
 class node:
 	def __init__(self, num_nodes = 0, coordinator = {}):
 
@@ -70,19 +60,20 @@ class node:
 
 		self.current_id_count = None
 
-		self.unspent_transactions = []
+		self.unspent_transactions = None
 
 		if num_nodes:
 			self.boostrap_node = True
 			print("Boostrap node")
 
 			self.node_id = 0
+
+			self.num_nodes = num_nodes
 			
 			genesis_block = self.create_genesis_block()
 
 			self.blockchain = [genesis_block]
 
-			self.num_nodes = num_nodes
 			self.current_id_count = 0
 
 			self.ring = [dict() for x in range(num_nodes)] # here we store information for every node, as its id, its address (ip:port)
@@ -178,7 +169,7 @@ class node:
 	def show_wallet_balance(self):
 		self.wallet.showBalance()
 
-		def create_genesis_block(self):
+	def create_genesis_block(self):
 		""" The first block of the blockhain """
 
 		prev_has = "1"
@@ -193,7 +184,7 @@ class node:
 
 		self.unspent_transactions = genesis_transaction.transaction_output
 
-		genesis_block = Block(prev_has, nonce, [genesis_transaction])
+		genesis_block = Block(prev_has, nonce, [genesis_transaction], genesis = True)
 
 		return genesis_block
 
@@ -215,7 +206,7 @@ class node:
 			self.open_transactions.append(new_transaction)
 
 			if len(open_transactions) == settings.capacity:
-				previous_hash = self.findPrevHash() # must be defined
+				previous_hash = self.find_last_block_hash()
 
 				block_content = create_block_content(previous_hash, open_transactions)
 				
@@ -223,6 +214,8 @@ class node:
 
 				# creates the new block that found
 				new_block = Block(previous_hash, nonce, self.open_transactions)
+
+				self.add_block_to_chain(new_block)
 
 				broadcast_block(new_block)
 
@@ -252,6 +245,18 @@ class node:
 		# MHTSOOOOO
 		pass
 
+	def add_block_to_chain(block):
+		self.blockchain.append(block)
+
+	def find_last_block_hash():
+		prev = self.blockchain[-1]
+
+		return prev.hash
+
+	def show_blockchain(self):
+		for block in self.blockchain:
+			print(block)
+
 
 	def valid_proof(self, block):
 		""" Checks if the broadcasted new block is valid """
@@ -273,6 +278,12 @@ class node:
 		# Check the proof of work
 		if not correct_block(hashed, difficulty):
 			print("The block does not achieves the needed proof of work")
+
+			return False
+
+		# Check if the number of transactions is equal to block capacity
+		if len(transactions) != settings.capacity:
+			print("The number of transactions is not equal to block capacity")
 
 			return False
 
@@ -305,8 +316,10 @@ class node:
 if __name__ == "__main__":
 
 	try:
-		node_id = 0
-		my_node = node(node_id)
+		coord = {}
+		coord['ip'] = '192.168.1.1'
+		coord['port'] = '5000'
+		my_node = node(num_nodes = 5, coordinator = coord)
 
 	except Exception as ex:
 		print("Node is not created.")
@@ -316,3 +329,5 @@ if __name__ == "__main__":
 		print("Node is created with success.\n")
 
 	my_node.show_wallet_balance()
+
+	my_node.show_blockchain()
