@@ -48,13 +48,13 @@ class Block:
 
 	def __str__(self):
 		text = 'Block ID\n'
-		text += hex(int(self.hash, 2)) + '\n' + '\n'
+		text += hex(int(self.hash, 2))[2:] + '\n' + '\n'
 
 		text += 'Previous block ID\n'
 		if self.genesis:
 			text += self.previousHash + '\n' + '\n'
 		else:
-			text += hex(int(self.previousHash, 2)) + '\n' + '\n'
+			text += hex(int(self.previousHash, 2))[2:] + '\n' + '\n'
 
 		text += 'Timestamp\n' + str(self.timestamp) + '\n' + '\n'
 
