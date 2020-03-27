@@ -15,6 +15,7 @@ FOR DEVELOPERS
 *`check ring`			See the dictionary with details of other nodes
 '''
 parser = argparse.ArgumentParser()
+
 parser.add_argument('port', help='port of the backend process', type=int)
 parser.add_argument('-n', help='Init as coordinator, for N partipipants', type=int)
 args = parser.parse_args()

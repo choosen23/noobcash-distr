@@ -34,15 +34,17 @@ class Transaction:
     def __init__(self, sender_address, recipient_address, value, sender_private_key = None, previous_transactions = [], genesis_transaction = False, new_transaction = True):
 
         # The wallet's public key of the sender that contains the money
-        self.sender_address = sender_address
+        # self.sender_address = sender_address
 
         if genesis_transaction:
+            self.sender_address = sender_address
             self.sender_str = sender_address
         else:
+            self.sender_address = sender_address.exportKey('PEM').decode('utf8')
             self.sender_str = rsa_to_string(sender_address)
 
         # The wallet's public key of the recipient of the money
-        self.receiver_address = recipient_address
+        self.receiver_address = recipient_address.exportKey('PEM').decode('utf8')
 
         # The wallet's public key of the recipient of the money
         self.receiver_str = rsa_to_string(recipient_address)
@@ -95,7 +97,7 @@ class Transaction:
 
                 self.to_be_singed = self.create_transaction_for_signing()
 
-                self.signature = self.sign_transaction(self.to_be_singed, sender_private_key)
+                self.signature = self.sign_transaction(self.to_be_singed, sender_private_key).decode('latin-1')
 
                 self.text = self.to_be_singed + '\nSignature\n' + str(self.signature) + '\n'
 

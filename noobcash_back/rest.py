@@ -20,9 +20,7 @@ app = Flask(__name__)
 CORS(app)
 app.config["DEBUG"] = True
 
-bootstrap = None
-simple_node = None
-
+node = None
 
 def copy_list_with_dicts_and_decode(l1):
     l2 = []
@@ -33,7 +31,7 @@ def copy_list_with_dicts_and_decode(l1):
         l2.append(d2)
     return l2
 
-@app.route('/init_coordinator', methods=['POST'])
+@app.route('/init_coordinator', methods=['POST']) #bootstrap
 def init_coordinator():
     participants = request.json['participants']
     port = request.json['port']
@@ -46,83 +44,89 @@ def init_coordinator():
         'port': port,
         'ip': ip
     }
-    global bootstrap
-    bootstrap = nd.node(participants,coordinator_details)
+    global node
+    node = nd.node(participants,coordinator_details)
 
     return '',200
 
-@app.route('/init_simple_node', methods=['POST'])
+@app.route('/init_simple_node', methods=['POST']) #simple node
 def init_node():
-    #generate public/private key
-    #send public key to coordinator
-    #take the unique id from coordinator
+
     port = request.json['port']
     ni.ifaddresses('eth1')
     ip = ni.ifaddresses('eth1')[ni.AF_INET][0]['addr']
     if not ip.startswith('192.'):
         ip = ni.ifaddresses('eth2')[ni.AF_INET][0]['addr']
 
-    global simple_node
-    simple_node = nd.node()
+    global node
+    node = nd.node()
     data = {}
-    data['public_key'] = simple_node.wallet.public_key.exportKey('PEM').decode('utf-8')
+    data['public_key'] = node.wallet.public_key.exportKey('PEM').decode('utf-8')
     data['ip'] = ip
     data['port'] = port
     response = requests.post(f'http://{settings.COORDINATOR_IP}:{settings.COORDINATOR_PORT}/new_node_came', json=data)
-    simple_node.id = response.json()['id']
+    node.id = response.json()['id']
     return '',200
 
-@app.route('/new_node_came',methods= ['POST'])
+@app.route('/new_node_came',methods= ['POST']) # bootstrap
 def node_details():
-    global bootstrap
-    bootstrap.current_id_count += 1
+    global node
+    node.current_id_count += 1
     data = request.json
     data['public_key'] = data['public_key'].encode('utf8')
-    data['id'] = bootstrap.current_id_count
-    bootstrap.ring[bootstrap.current_id_count] = data
+    data['id'] = node.current_id_count
+    node.ring[node.current_id_count] = data
     
     #do transaction
-    receiver_key_PEM = bootstrap.ring[bootstrap.current_id_count]['public_key']
+    receiver_key_PEM = node.ring[node.current_id_count]['public_key']
     receiver_key = RSA.importKey(receiver_key_PEM)
     value = 100
-    transaction = bootstrap.create_transaction(receiver_key,value)
-    #to_send = { 'transaction' : json.dumps(transaction.__dict__)} # TODO
-    print(transaction.__dict__)
-    # for x in range(bootstrap.current_id_count-1):
-    #      ip = bootstrap.ring[x+1]['ip']
-    #      port = bootstrap.ring[x+1]['port']
-    #      requests.post(f'http://{ip}:{port}/accept_and_verify_transaction', json=to_send)
+    transaction = node.create_transaction(receiver_key,value)
+    to_send = transaction.__dict__
+    
+    # print(to_send)
+    # print(type(to_send))
+    # to_send_json = json.dumps(to_send)
+    # print(to_send_json)
+    # print(type(to_send_json))
+
+    for x in range(node.current_id_count):
+         ip = node.ring[x+1]['ip']
+         port = node.ring[x+1]['port']
+         requests.post(f'http://{ip}:{port}/accept_and_verify_transaction', json=to_send)
 
     # If all nodes are connected
-    if bootstrap.current_id_count == bootstrap.num_nodes-1:     
+    if node.current_id_count == node.num_nodes-1:
+        port = node.ring[0]['port']     
         requests.post(f'http://127.0.0.1:{port}/send_list_of_nodes')
     
     #for each node send the details
     # to_send = {
-    #     'id': bootstrap.current_id_count,
-    #     'blockchain': bootstrap.blockchain, # TODO: convert obj to readable
-    #     'unspent_transactions': bootstrap.unspent_transactions
+    #     'id': node.current_id_count,
+    #     'blockchain': node.blockchain, # TODO: convert obj to readable
+    #     'unspent_transactions': node.unspent_transactions
     # }
-    to_send = {'id' :  bootstrap.current_id_count}
+    
+    to_send = {'id' :  node.current_id_count}
     return jsonify(to_send),200
 
-@app.route('/send_list_of_nodes', methods=['POST'])
+@app.route('/send_list_of_nodes', methods=['POST']) #bootstrap
 def send_list_of_nodes():
-    global bootstrap
-    to_send = copy_list_with_dicts_and_decode(bootstrap.ring)
-    for x in range(bootstrap.num_nodes-1):
-        ip = bootstrap.ring[x+1]['ip']
-        port = bootstrap.ring[x+1]['port']
+    global node
+    to_send = copy_list_with_dicts_and_decode(node.ring)
+    for x in range(node.num_nodes-1):
+        ip = node.ring[x+1]['ip']
+        port = node.ring[x+1]['port']
         requests.post(f'http://{ip}:{port}/get_list_of_nodes', json=to_send)
     return '',200
 
 @app.route('/get_list_of_nodes', methods=['POST'])
 def get_list_of_nodes():
-    global simple_node
+    global node
     to_save = request.json
     for x in to_save:
         x['public_key'] = x['public_key'].encode('utf8')
-    simple_node.ring = to_save
+    node.ring = to_save
     return '',200
 
 @app.route('/new_transaction', methods=['POST'])
@@ -134,22 +138,22 @@ def new_transaction():
 
     return '',200
 
-@app.route('/accept_and_verify_transaction', methods=['POST'])
+@app.route('/accept_and_verify_transaction', methods=['POST']) #all
 def accept_and_verify_transaction():
     # given a transaction in body with json
     # import test_mnode as node
     # node.add_transaction_to_block(transaction object) = True or False
+    print('mpika')
+    global node 
 
-    global simple_node 
-    
-    
+    print(request.json)
     # transaction is a transaction object to be modified
-    #is_validate = simple_node.add_transaction_to_block(transaction)
+    #is_validate = node.add_transaction_to_block(transaction)
     
-    # global bootstrap
+    # global node
     # data = request.json
     # h = SHA.new(data['message'].encode('utf8'))
-    # x = bootstrap.ring[1]['public_key']
+    # x = node.ring[1]['public_key']
     # pk = RSA.importKey(x)
     # verifier = PKCS1_v1_5.new(pk)
     # if verifier.verify(h,data['signature'].encode('latin-1')):
@@ -167,19 +171,19 @@ def view_last_transactions():
 
 @app.route('/show_balance', methods=['GET'])
 def show_balance():
-    global bootstrap
+    global node
     to_send = {
-        'balance' : bootstrap.wallet_balance()
+        'balance' : node.wallet_balance()
     }
     return jsonify(to_send),200
 
 @app.route('/', methods=['POST'])
 def index():
-    global simple_node
+    global node
     print(request.json['message'])
     message = request.json['message'].encode('utf8')
     h = SHA.new(message)
-    signer = PKCS1_v1_5.new(simple_node.wallet.private_key)
+    signer = PKCS1_v1_5.new(node.wallet.private_key)
     signature = signer.sign(h)
     decoded_signature = signature.decode('latin-1')
     data = {
@@ -198,12 +202,7 @@ def index():
 @app.route('/test/check_ring', methods=['GET'])
 def test_check_ring():
     params = request.args.get('id')
-    if params == 'bootstrap':
-        global bootstrap
-        node = bootstrap
-    else: 
-        global simple_node
-        node = simple_node
+    global node
     if node.ring:    
         to_send = copy_list_with_dicts_and_decode(node.ring)
         return jsonify(to_send),200
@@ -211,14 +210,9 @@ def test_check_ring():
         return '',500
 
 @app.route('/test/check_id', methods=['GET'])
-def test_check_id_simple_node():
+def test_check_id_node():
     params = request.args.get('id')
-    if params == 'bootstrap':
-        global bootstrap
-        node = bootstrap
-    else: 
-        global simple_node
-        node = simple_node
+    global node
     to_send = {'id':node.id}
     return jsonify(to_send),200
 
