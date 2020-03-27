@@ -5,13 +5,12 @@ import test_node as nd
 import json
 import netifaces as ni
 import settings
-import redis
-import pickle
 # import block
 # import node
 # import blockchain
 # import wallet
 # import transaction
+import json
 
 from Crypto.Signature import PKCS1_v1_5
 from Crypto.Hash import SHA
@@ -20,10 +19,19 @@ from Crypto.PublicKey import RSA
 app = Flask(__name__)
 CORS(app)
 app.config["DEBUG"] = True
-#blockchain = Blockchain()
+
 bootstrap = None
 simple_node = None
-r = redis.StrictRedis(host='localhost', port=6379, password='')
+
+
+def copy_list_with_dicts_and_decode(l1):
+    l2 = []
+    for d1 in l1:
+        d2 = d1.copy()
+        if d2:
+            d2['public_key'] = d2['public_key'].decode('utf8')
+        l2.append(d2)
+    return l2
 
 @app.route('/init_coordinator', methods=['POST'])
 def init_coordinator():
@@ -31,6 +39,9 @@ def init_coordinator():
     port = request.json['port']
     ni.ifaddresses('eth1')
     ip = ni.ifaddresses('eth1')[ni.AF_INET][0]['addr']
+    if not ip.startswith('192.'):
+        ip = ni.ifaddresses('eth2')[ni.AF_INET][0]['addr']
+
     coordinator_details={
         'port': port,
         'ip': ip
@@ -45,15 +56,18 @@ def init_node():
     #generate public/private key
     #send public key to coordinator
     #take the unique id from coordinator
-    node_port = request.json['port']
+    port = request.json['port']
     ni.ifaddresses('eth1')
-    node_ip = ni.ifaddresses('eth1')[ni.AF_INET][0]['addr']
+    ip = ni.ifaddresses('eth1')[ni.AF_INET][0]['addr']
+    if not ip.startswith('192.'):
+        ip = ni.ifaddresses('eth2')[ni.AF_INET][0]['addr']
+
     global simple_node
     simple_node = nd.node()
     data = {}
     data['public_key'] = simple_node.wallet.public_key.exportKey('PEM').decode('utf-8')
-    data['ip'] = node_ip
-    data['port'] = node_port
+    data['ip'] = ip
+    data['port'] = port
     response = requests.post(f'http://{settings.COORDINATOR_IP}:{settings.COORDINATOR_PORT}/new_node_came', json=data)
     simple_node.id = response.json()['id']
     return '',200
@@ -63,7 +77,7 @@ def node_details():
     global bootstrap
     bootstrap.current_id_count += 1
     data = request.json
-    data['public_key'] =data['public_key'].encode('utf8')
+    data['public_key'] = data['public_key'].encode('utf8')
     data['id'] = bootstrap.current_id_count
     bootstrap.ring[bootstrap.current_id_count] = data
     
@@ -72,32 +86,30 @@ def node_details():
     receiver_key = RSA.importKey(receiver_key_PEM)
     value = 100
     transaction = bootstrap.create_transaction(receiver_key,value)
-    to_send = { 'transaction' : transaction} # TODO
-    for x in range(bootstrap.num_nodes-1):
-        ip = bootstrap.ring[x+1]['ip']
-        port = bootstrap.ring[x+1]['port']
-        requests.post(f'http://{ip}:{port}/accept_and_verify_transaction', json=to_send)
+    #to_send = { 'transaction' : json.dumps(transaction.__dict__)} # TODO
+    print(transaction.__dict__)
+    # for x in range(bootstrap.current_id_count-1):
+    #      ip = bootstrap.ring[x+1]['ip']
+    #      port = bootstrap.ring[x+1]['port']
+    #      requests.post(f'http://{ip}:{port}/accept_and_verify_transaction', json=to_send)
 
     # If all nodes are connected
     if bootstrap.current_id_count == bootstrap.num_nodes-1:     
         requests.post(f'http://127.0.0.1:{port}/send_list_of_nodes')
     
     #for each node send the details
-    to_send = {
-        'id': bootstrap.current_id_count,
-        'blockchain': bootstrap.blockchain, # TODO: convert obj to readable
-        'unspent_transactions': bootstrap.unspent_transactions
-    }
+    # to_send = {
+    #     'id': bootstrap.current_id_count,
+    #     'blockchain': bootstrap.blockchain, # TODO: convert obj to readable
+    #     'unspent_transactions': bootstrap.unspent_transactions
+    # }
+    to_send = {'id' :  bootstrap.current_id_count}
     return jsonify(to_send),200
 
 @app.route('/send_list_of_nodes', methods=['POST'])
 def send_list_of_nodes():
     global bootstrap
-    to_send = []
-    for x in range(bootstrap.num_nodes):
-        data = bootstrap.ring[x]
-        data['public_key'] = data['public_key'].decode('utf8')
-        to_send.append(data)
+    to_send = copy_list_with_dicts_and_decode(bootstrap.ring)
     for x in range(bootstrap.num_nodes-1):
         ip = bootstrap.ring[x+1]['ip']
         port = bootstrap.ring[x+1]['port']
@@ -183,33 +195,33 @@ def index():
 #		FOR DEVELOPERS
 #=======================================================
 
-@app.route('/test/bootstrap/check_ring', methods=['GET'])
-def test_check_ring_bootstrap():
-    global bootstrap
-    to_send = bootstrap.ring
-    for x in to_send:
-        x['public_key'] = x['public_key'].decode('utf8')
-    return jsonify(to_send),200
+@app.route('/test/check_ring', methods=['GET'])
+def test_check_ring():
+    params = request.args.get('id')
+    if params == 'bootstrap':
+        global bootstrap
+        node = bootstrap
+    else: 
+        global simple_node
+        node = simple_node
+    if node.ring:    
+        to_send = copy_list_with_dicts_and_decode(node.ring)
+        return jsonify(to_send),200
+    else: 
+        return '',500
 
-@app.route('/test/simple_node/check_ring', methods=['GET'])
-def test_check_ring_simple_node():
-    global simple_node
-    to_send = simple_node.ring
-    for x in to_send:
-        x['public_key'] = x['public_key'].decode('utf8')
-    return jsonify(to_send),200
-
-@app.route('/test/simple_node/check_id', methods=['GET'])
+@app.route('/test/check_id', methods=['GET'])
 def test_check_id_simple_node():
-    global simple_node
-    to_send = {'id':simple_node.id}
+    params = request.args.get('id')
+    if params == 'bootstrap':
+        global bootstrap
+        node = bootstrap
+    else: 
+        global simple_node
+        node = simple_node
+    to_send = {'id':node.id}
     return jsonify(to_send),200
 
-@app.route('/test/bootstrap/check_id', methods=['GET'])
-def test_check_id_bootstrap():
-    global bootstrap
-    to_send = {'id':bootstrap.id}
-    return jsonify(to_send),200
 
 if __name__ == '__main__':
     from argparse import ArgumentParser
@@ -218,5 +230,4 @@ if __name__ == '__main__':
     parser.add_argument('-p', '--port', default=5000, type=int, help='port to listen on (default:5000')
     args = parser.parse_args()
     port = args.port
-
     app.run(host='0.0.0.0', port=port)

@@ -10,7 +10,7 @@ setup(
     install_requires=[
     'flask',
     'flask_cors',
-    'netifaces'
+    'netifaces',
     'blockchain',
     'pycryptodome',
     'Datetime']

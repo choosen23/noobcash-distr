@@ -19,8 +19,11 @@ parser.add_argument('port', help='port of the backend process', type=int)
 parser.add_argument('-n', help='Init as coordinator, for N partipipants', type=int)
 args = parser.parse_args()
 
+
 PARTICIPANTS = args.n
+PARAMS = { 'id': 'bootstrap'} if PARTICIPANTS else {'id': 'single_node'}
 connection_URL = f'http://127.0.0.1:{args.port}/init_coordinator' if PARTICIPANTS else f'http://127.0.0.1:{args.port}/init_simple_node'
+
 try:
 	response = requests.post(connection_URL, json={
 		'participants': PARTICIPANTS,
@@ -53,24 +56,21 @@ while True:
 	#=======================================================
 	#		FOR DEVELOPERS
 	#=======================================================
-	elif cmd == "check ring" and PARTICIPANTS:
-		response = requests.get(f'http://127.0.0.1:{args.port}/test/bootstrap/check_ring')
-		res = response.json()
-		to_show = []
-		for x in res:
-			x['public_key']=x['public_key'].encode('utf8')
-		print(res)
-		continue
 	elif cmd == "check ring":
-		response = requests.get(f'http://127.0.0.1:{args.port}/test/simple_node/check_ring')
+		response = requests.get(f'http://127.0.0.1:{args.port}/test/check_ring', params = PARAMS)
+		if response.status_code == 500:
+			print('ERROR, not all nodes registered in the network')
+			continue
 		res = response.json()
 		to_show = []
 		for x in res:
-			x['public_key']=x['public_key'].encode('utf8')
-		print(res)	
-	elif cmd == "check id":
-		response = requests.get(f'http://127.0.0.1:{args.port}/test/check_id')
+			print(x) 
+		
 
+	elif cmd == "check id":
+		response = requests.get(f'http://127.0.0.1:{args.port}/test/check_id', params = PARAMS)
+		res = response.json()
+		print('Your id is', res['id'])
 
 	else:
 		print("Uknown Command")
