@@ -25,15 +25,21 @@ def sha(text):
 
 
 class Block:
-	def __init__(self, previousHash, nonce, listOfTransactions, genesis = False):
+	def __init__(self, previousHash, nonce, listOfTransactions, genesis = False, new_block = True):
 
 		self.previousHash = previousHash
 		self.timestamp = datetime.now()
 		self.nonce = nonce
 		self.listOfTransactions = listOfTransactions
-		self.hash = self.myHash(self.previousHash, self.listOfTransactions)
+		self.hash = None
 		self.genesis = genesis
 
+		if new_block:
+			self.hash = self.myHash(self.previousHash, self.listOfTransactions)
+
+
+	def set_hash(self, hash):
+		self.hash = hash
 
 	def myHash(self, previousHash, listOfTransactions):
 		""" Calculates the hash of the block """

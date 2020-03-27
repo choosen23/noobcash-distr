@@ -89,7 +89,7 @@ class node:
 		sender_public_key = transaction.sender_address
 
 		# Check if it is signed by the sender
-		message = transaction.text
+		message = transaction.to_be_singed
 		signature = transaction.signature
 		h = SHA.new(message)
 		verifier = PKCS1_v1_5.new(sender_public_key)
@@ -149,12 +149,6 @@ class node:
 
 			# Transaction is valid
 
-			# We remove the transaction input unspent transactions cause now they are spent
-			self.unspent_transactions = list(filter(lambda utxo: utxo not in transaction_input, self.unspent_transactions))
-
-			# We add the new unspent transactions to the list
-			self.unspent_transactions = list(np.concatenate((self.unspent_transactions, transaction_output), axis = 0))
-
 			return True
 
 
@@ -180,9 +174,8 @@ class node:
 		sender_private_key = None
 		receiver = self.wallet.public_key
 		amount = 100 * self.num_nodes
-		prev_transactions = []
 
-		genesis_transaction  = Transaction(sender, sender_private_key, receiver, amount, prev_transactions, genesis_transaction = True)
+		genesis_transaction = Transaction(sender, receiver, amount, sender_private_key = sender_private_key, genesis_transaction = True)
 
 		self.unspent_transactions = genesis_transaction.transaction_output
 
@@ -190,15 +183,9 @@ class node:
 
 		return genesis_block
 
-	
-	def register_node_to_ring():
-		#add this node to the ring, only the bootstrap node can add a node to the ring after checking his wallet and ip:port address
-		#bottstrap node informs all other nodes and gives the request node an id and 100 NBCs
-		raise
-
 
 	def create_transaction(self, receiver, value):
-		new_transaction = Transaction(self.wallet.public_key, self.wallet.private_key, receiver, value, self.wallet.transactions)
+		new_transaction = Transaction(self.wallet.public_key, receiver, value, sender_private_key = self.wallet.private_key, previous_transactions = self.wallet.transactions)
 
 		return new_transaction
 
@@ -219,7 +206,7 @@ class node:
 
 				self.add_block_to_chain(new_block)
 
-				broadcast_block(new_block)
+				#broadcast_block(new_block)
 
 
 	def mine_block(self, block, difficulty):
@@ -248,7 +235,24 @@ class node:
 		pass
 
 	def add_block_to_chain(block):
+		
+		transactions = block.listOfTransactions()
+
+		for tr in transactions:
+			transaction_input = tr.transaction_input
+			transaction_output = tr.transaction_output
+
+			# We remove the transaction from the open transactions
+			self.open_transactions = list(filter(lambda open_tr: open_tr.transaction_id != tr.transaction_id, self.open_transactions))
+
+			# We remove the transaction input unspent transactions cause now they are spent
+			self.unspent_transactions = list(filter(lambda utxo: utxo not in transaction_input, self.unspent_transactions))
+
+			# We add the new unspent transactions to the list
+			self.unspent_transactions = list(np.concatenate((self.unspent_transactions, transaction_output), axis = 0))
+
 		self.blockchain.append(block)
+
 
 	def find_last_block_hash():
 		prev = self.blockchain[-1]
@@ -299,6 +303,7 @@ class node:
 
 
 		# Block is valid
+
 		return True
 
 
