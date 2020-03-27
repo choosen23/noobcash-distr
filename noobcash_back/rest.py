@@ -66,14 +66,28 @@ def node_details():
     data['public_key'] =data['public_key'].encode('utf8')
     data['id'] = bootstrap.current_id_count
     bootstrap.ring[bootstrap.current_id_count] = data
+    
+    #do transaction
+    receiver_key_PEM = bootstrap.ring[bootstrap.current_id_count]['public_key']
+    receiver_key = RSA.importKey(receiver_key_PEM)
+    value = 100
+    transaction = bootstrap.create_transaction(receiver_key,value)
+    to_send = { 'transaction' : transaction} # TODO
+    for x in range(bootstrap.num_nodes-1):
+        ip = bootstrap.ring[x+1]['ip']
+        port = bootstrap.ring[x+1]['port']
+        requests.post(f'http://{ip}:{port}/accept_and_verify_transaction', json=to_send)
+
+    # If all nodes are connected
     if bootstrap.current_id_count == bootstrap.num_nodes-1:     
         requests.post(f'http://127.0.0.1:{port}/send_list_of_nodes')
+    
+    #for each node send the details
     to_send = {
         'id': bootstrap.current_id_count,
         'blockchain': bootstrap.blockchain, # TODO: convert obj to readable
         'unspent_transactions': bootstrap.unspent_transactions
     }
-    ## do transaction
     return jsonify(to_send),200
 
 @app.route('/send_list_of_nodes', methods=['POST'])
@@ -84,7 +98,6 @@ def send_list_of_nodes():
         data = bootstrap.ring[x]
         data['public_key'] = data['public_key'].decode('utf8')
         to_send.append(data)
-    print(to_send)
     for x in range(bootstrap.num_nodes-1):
         ip = bootstrap.ring[x+1]['ip']
         port = bootstrap.ring[x+1]['port']
@@ -106,6 +119,7 @@ def new_transaction():
     # import test_node as node
     # node.create_transaction(id->public_key receiver,value)
     # broadcast transaction
+
     return '',200
 
 @app.route('/accept_and_verify_transaction', methods=['POST'])
@@ -113,16 +127,23 @@ def accept_and_verify_transaction():
     # given a transaction in body with json
     # import test_mnode as node
     # node.add_transaction_to_block(transaction object) = True or False
-    global bootstrap
-    data = request.json
-    h = SHA.new(data['message'].encode('utf8'))
-    x = bootstrap.ring[1]['public_key']
-    pk = RSA.importKey(x)
-    verifier = PKCS1_v1_5.new(pk)
-    if verifier.verify(h,data['signature'].encode('latin-1')):
-        print("true")
-    else:
-        print("false")
+
+    global simple_node 
+    
+    
+    # transaction is a transaction object to be modified
+    #is_validate = simple_node.add_transaction_to_block(transaction)
+    
+    # global bootstrap
+    # data = request.json
+    # h = SHA.new(data['message'].encode('utf8'))
+    # x = bootstrap.ring[1]['public_key']
+    # pk = RSA.importKey(x)
+    # verifier = PKCS1_v1_5.new(pk)
+    # if verifier.verify(h,data['signature'].encode('latin-1')):
+    #     print("true")
+    # else:
+    #     print("false")
     return '',200
 
 @app.route('/view_last_transactions', methods=['GET'])
@@ -135,8 +156,10 @@ def view_last_transactions():
 @app.route('/show_balance', methods=['GET'])
 def show_balance():
     global bootstrap
-    bootstrap.show_wallet_balance()
-    return '',200
+    to_send = {
+        'balance' : bootstrap.wallet_balance()
+    }
+    return jsonify(to_send),200
 
 @app.route('/', methods=['POST'])
 def index():

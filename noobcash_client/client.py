@@ -11,8 +11,8 @@ Available commands:
 ==============================================================================================
 FOR DEVELOPERS
 ===============================================================================================
-*`check id`							 See the id of this node
-*`check ring`						 See the dictionary with details of other nodes
+*`check id`				See the id of this node
+*`check ring`			See the dictionary with details of other nodes
 '''
 parser = argparse.ArgumentParser()
 parser.add_argument('port', help='port of the backend process', type=int)
@@ -35,8 +35,8 @@ while True:
 	cmd = input("> ")
 	#print(cmd)
 	if cmd == 'balance':
-		print('mpika')
 		response = requests.get(f'http://127.0.0.1:{args.port}/show_balance')
+		print(str(response.json()['balance']) + ' NBC')
 	elif cmd == 'test':
 		response = requests.post(f'http://127.0.0.1:{args.port}/',json={'message':'a simple message'})
 		print("nice")
@@ -70,6 +70,7 @@ while True:
 		print(res)	
 	elif cmd == "check id":
 		response = requests.get(f'http://127.0.0.1:{args.port}/test/check_id')
+
 
 	else:
 		print("Uknown Command")

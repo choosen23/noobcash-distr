@@ -91,7 +91,7 @@ class node:
 		# Check if it is signed by the sender
 		message = transaction.text
 		signature = transaction.signature
-		h = SHA.new(message)
+		h = SHA.new(message.encode('utf8'))
 		verifier = PKCS1_v1_5.new(sender_public_key)
 
 		if not verifier.verify(h, signature):
@@ -219,7 +219,7 @@ class node:
 
 				self.add_block_to_chain(new_block)
 
-				broadcast_block(new_block)
+				#broadcast_block(new_block)
 
 
 	def mine_block(self, block, difficulty):
