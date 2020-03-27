@@ -31,7 +31,7 @@ def sha_hex(text):
 
 class Transaction:
 
-    def __init__(self, sender_address, sender_private_key, recipient_address, value, prev_transactions, genesis_transaction = False):
+    def __init__(self, sender_address, recipient_address, value, sender_private_key = None, previous_transactions = [], genesis_transaction = False, new_transaction = True):
 
         # The wallet's public key of the sender that contains the money
         self.sender_address = sender_address
@@ -54,7 +54,7 @@ class Transaction:
         self.amount = value
 
         # The unique ID of the transaction
-        self.transaction_id = self.calculate_transaction_id()
+        self.transaction_id = None
 
         # A list of Transaction Input
         self.transaction_input = None
@@ -71,30 +71,42 @@ class Transaction:
         # Text that contains the transaction info that will be put in the block
         self.text = None
 
-        if genesis_transaction:
-            """ If this is the first transaction of the system that is inside the genesis block """
+        if new_transaction:
 
-            first_unspent = {}
-            first_unspent['transaction_id'] = self.transaction_id
-            first_unspent['wallet_id'] = self.receiver_str
-            first_unspent['amount'] = self.amount
+            self.transaction_id = self.calculate_transaction_id()
 
-            self.transaction_input = []
-            self.transaction_output = [first_unspent]
+            if genesis_transaction:
+                """ If this is the first transaction of the system that is inside the genesis block """
 
-            self.canBeDone = True
+                first_unspent = {}
+                first_unspent['transaction_id'] = self.transaction_id
+                first_unspent['wallet_id'] = self.receiver_str
+                first_unspent['amount'] = self.amount
 
-            self.text = self.create_transaction_for_signing()
+                self.transaction_input = []
+                self.transaction_output = [first_unspent]
 
-        else:
-            self.transaction_input, self.transaction_output = self.calculate_transaction_IO(prev_transactions)
+                self.canBeDone = True
 
-            self.to_be_singed = self.create_transaction_for_signing()
+                self.text = self.create_transaction_for_signing()
 
-            self.signature = self.sign_transaction(self.to_be_singed, sender_private_key)
+            else:
+                self.transaction_input, self.transaction_output = self.calculate_transaction_IO(previous_transactions)
 
-            self.text = self.to_be_singed + '\nSignature\n' + str(self.signature) + '\n'
+                self.to_be_singed = self.create_transaction_for_signing()
 
+                self.signature = self.sign_transaction(self.to_be_singed, sender_private_key)
+
+                self.text = self.to_be_singed + '\nSignature\n' + str(self.signature) + '\n'
+
+
+    def set_transaction_info(self, transaction_id, signature, to_be_singed, text, transaction_input, transaction_output):
+        self.transaction_id = transaction_id
+        self.signature = signature
+        self.to_be_singed = to_be_singed
+        self.text = text
+        self.transaction_input = transaction_input
+        self.transaction_output = transaction_output
 
     def calculate_transaction_id(self):
         """ Finds a unique id to give to the transaction by combining
@@ -195,6 +207,6 @@ if __name__ == "__main__":
     new_tr['amount'] = 100000
     trs.append(new_tr)
 
-    t = Transaction(sender, senderpr, receiver, 100, trs)
+    t = Transaction(sender, receiver, 100, sender_private_key = senderpr, previous_transactions = trs)
 
     print(t.text)

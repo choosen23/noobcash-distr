@@ -48,7 +48,7 @@ class wallet:
 
         self.generate_wallet()
 
-        self.transactions = None
+        self.transactions = []
 
     def generate_wallet(self):
         """ Generates a pair of public/private key using RSA algorithm """
