@@ -86,11 +86,11 @@ class node:
 	def validate_transaction(self, transaction):
 		""" When a transaction is received, it needs to be verified first """
 		
-		sender_public_key = transaction.sender_address
+		sender_public_key = RSA.importKey(transaction.sender_address.encode('utf8'))
 
 		# Check if it is signed by the sender
 		message = transaction.to_be_singed
-		signature = transaction.signature
+		signature = transaction.signature.encode('latin-1')
 		h = SHA.new(message.encode('utf8'))
 		verifier = PKCS1_v1_5.new(sender_public_key)
 

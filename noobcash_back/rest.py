@@ -31,7 +31,7 @@ def copy_list_with_dicts_and_decode(l1):
         l2.append(d2)
     return l2
 
-@app.route('/init_coordinator', methods=['POST']) #bootstrap
+@app.route('/init_coordinator', methods=['POST']) #bootstrap DONE
 def init_coordinator():
     participants = request.json['participants']
     port = request.json['port']
@@ -49,7 +49,7 @@ def init_coordinator():
 
     return '',200
 
-@app.route('/init_simple_node', methods=['POST']) #simple node
+@app.route('/init_simple_node', methods=['POST']) #simple node DONE
 def init_node():
 
     port = request.json['port']
@@ -84,7 +84,7 @@ def node_details():
     transaction = node.create_transaction(receiver_key,value)
     to_send = transaction.__dict__
     
-    # print(to_send)
+    print(to_send)
     # print(type(to_send))
     # to_send_json = json.dumps(to_send)
     # print(to_send_json)
@@ -110,7 +110,7 @@ def node_details():
     to_send = {'id' :  node.current_id_count}
     return jsonify(to_send),200
 
-@app.route('/send_list_of_nodes', methods=['POST']) #bootstrap
+@app.route('/send_list_of_nodes', methods=['POST']) #bootstrap DONE
 def send_list_of_nodes():
     global node
     to_send = copy_list_with_dicts_and_decode(node.ring)
@@ -120,7 +120,7 @@ def send_list_of_nodes():
         requests.post(f'http://{ip}:{port}/get_list_of_nodes', json=to_send)
     return '',200
 
-@app.route('/get_list_of_nodes', methods=['POST'])
+@app.route('/get_list_of_nodes', methods=['POST']) #simple_node  DONE
 def get_list_of_nodes():
     global node
     to_save = request.json
@@ -129,12 +129,25 @@ def get_list_of_nodes():
     node.ring = to_save
     return '',200
 
-@app.route('/new_transaction', methods=['POST'])
+@app.route('/new_transaction', methods=['POST']) #all 
 def new_transaction():
     # given a transaction object
     # import test_node as node
     # node.create_transaction(id->public_key receiver,value)
     # broadcast transaction
+    response = request.json
+    value = response['amount']
+    receiver_id = response['id']
+    receiver_key = 0
+    transaction = node.create_transaction(receiver_key,value)
+    
+    to_send = transaction.__dict__
+    for x in range(node.num_nodes-1):
+        ip = node.ring[x+1]['ip']
+        port = node.ring[x+1]['port']
+        requests.post(f'http://{ip}:{port}/accept_and_verify_transaction', json=to_send)
+    
+    # transaction is a transaction object to be modified
 
     return '',200
 
@@ -143,30 +156,36 @@ def accept_and_verify_transaction():
     # given a transaction in body with json
     # import test_mnode as node
     # node.add_transaction_to_block(transaction object) = True or False
-    print('mpika')
     global node 
 
-    print(request.json)
-    # transaction is a transaction object to be modified
-    #is_validate = node.add_transaction_to_block(transaction)
+    response = request.json
+    sender = RSA.importKey(response['sender_address'].encode('utf8'))
+    receiver = RSA.importKey(response['receiver_address'].encode('utf8'))
+    value = response['amount']
+    signature = response['signature'].encode('latin-1')
     
-    # global node
-    # data = request.json
-    # h = SHA.new(data['message'].encode('utf8'))
-    # x = node.ring[1]['public_key']
-    # pk = RSA.importKey(x)
-    # verifier = PKCS1_v1_5.new(pk)
-    # if verifier.verify(h,data['signature'].encode('latin-1')):
-    #     print("true")
-    # else:
-    #     print("false")
+    transaction = node.Transaction(sender,receiver,value,new_transaction = False) #check keys
+    
+    transaction_id = response['transaction_id']
+    to_be_signed = response['to_be_signed']
+    text = response['text']
+    transaction_input = response['transaction_input']
+    transaction_output = response['transaction_output']
+    # transaction is a transaction object to be modified
+
+    transaction.set_transaction_info(transaction_id,signature,to_be_signed,text,transaction_input,transaction_output)#keys
+    is_valid = node.validate_transaction(transaction)
+    if is_valid:
+        print('Transaction is valid')
+    else:
+        print('is Not Valid')   
+    node.add_transaction_to_block(transaction)
+    
     return '',200
 
 @app.route('/view_last_transactions', methods=['GET'])
 def view_last_transactions():
-    transactions = blockchain.transactions
-    response = {'transactions': transactions}
-    return jsonify(response), 200
+    return '',200
 
 
 @app.route('/show_balance', methods=['GET'])

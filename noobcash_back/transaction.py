@@ -39,9 +39,13 @@ class Transaction:
         if genesis_transaction:
             self.sender_address = sender_address
             self.sender_str = sender_address
-        else:
-            self.sender_address = sender_address.exportKey('PEM').decode('utf8')
+        elif not new_transaction:
+            self.sender_address = sender_address
             self.sender_str = rsa_to_string(sender_address)
+        else:
+            self.sender_str = rsa_to_string(sender_address)    
+            self.sender_address = sender_address.exportKey('PEM').decode('utf8')
+            
 
         # The wallet's public key of the recipient of the money
         self.receiver_address = recipient_address.exportKey('PEM').decode('utf8')
