@@ -43,7 +43,7 @@ class Transaction:
             self.sender_address = sender_address
             self.sender_str = rsa_to_string(sender_address)
         else:
-            self.sender_str = rsa_to_string(sender_address)    
+            self.sender_str = rsa_to_string(sender_address)
             self.sender_address = sender_address.exportKey('PEM').decode('utf8')
             
 
@@ -160,7 +160,9 @@ class Transaction:
 
             self.canBeDone = False
 
-            return []
+            print("Transaction cannot be done due to sender's lack of money")
+
+            return [], []
 
         sorted_trs = sorted(unspent, key = lambda t : t['amount'])
 
@@ -175,8 +177,12 @@ class Transaction:
             if (paid > self.amount):
                 change = paid - self.amount
 
-                tr['amount'] = change # change the amount of this transaction to the change of the current payment of sender
-                output_trs.append(tr)
+                new_tr = {} # we create a new utxo for sender
+                new_tr['transaction_id'] = tr['transaction_id']
+                new_tr['wallet_id'] = tr['wallet_id']
+                new_tr['amount'] = change
+
+                output_trs.append(new_tr)
 
         new_tr = {} # we create a new utxo for receiver
         new_tr['transaction_id'] = self.transaction_id

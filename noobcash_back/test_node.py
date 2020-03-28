@@ -195,11 +195,8 @@ class node:
 			self.open_transactions.append(new_transaction)
 
 			if len(open_transactions) == settings.capacity:
-				previous_hash = self.find_last_block_hash()
 
-				block_content = create_block_content(previous_hash, open_transactions)
-				
-				nonce = self.mine_block(block_content, settings.difficulty)
+				nonce = self.mine_block()
 
 				# creates the new block that found
 				new_block = Block(previous_hash, nonce, self.open_transactions)
@@ -209,11 +206,21 @@ class node:
 				#broadcast_block(new_block)
 
 
-	def mine_block(self, block, difficulty):
+	def mine_block(self):
+		if len(self.open_transactions) < settings.capacity:
+			print("The open transactions are fewer than the required block capacity")
+
+			return None
+
+		to_be_mined = self.open_transactions[:settings.capacity]
+		difficulty = settings.difficulty
+		previous_hash = self.find_last_block_hash()
+		block_content = create_block_content(previous_hash, to_be_mined)
+
 		nonce = 0
 
 		while(True):
-			hashed = sha(block + str(nonce))
+			hashed = sha(block_content + str(nonce))
 			if correct_block(hashed, difficulty):
 				print("New block is mined with success!")
 				print("Nonce:", nonce)
@@ -338,4 +345,14 @@ if __name__ == "__main__":
 
 	my_node.show_wallet_balance()
 
-	my_node.show_blockchain()
+	#my_node.show_blockchain()
+
+	receiver, _ = wallet.generate_keys()
+
+	tr = my_node.create_transaction(receiver, 120)
+
+	print(tr.transaction_input)
+	print('---------------------')
+	print(tr.transaction_output)
+
+	my_node.show_wallet_balance()
