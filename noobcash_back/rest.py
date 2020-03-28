@@ -9,7 +9,7 @@ import settings
 # import node
 # import blockchain
 # import wallet
-# import transaction
+import transaction as Transaction
 import json
 
 from Crypto.Signature import PKCS1_v1_5
@@ -135,20 +135,21 @@ def new_transaction():
     # import test_node as node
     # node.create_transaction(id->public_key receiver,value)
     # broadcast transaction
+    global node
     response = request.json
     value = response['amount']
     receiver_id = response['id']
-    receiver_key = 0
+    receiver_key = RSA.importKey(node.ring[receiver_id]['public_key'].encode('utf8'))
     transaction = node.create_transaction(receiver_key,value)
     
     to_send = transaction.__dict__
-    for x in range(node.num_nodes-1):
-        ip = node.ring[x+1]['ip']
-        port = node.ring[x+1]['port']
+    for x in range(node.ring):
+        if x == node.id:
+            continue
+        ip = node.ring[x]['ip']
+        port = node.ring[x]['port']
         requests.post(f'http://{ip}:{port}/accept_and_verify_transaction', json=to_send)
     
-    # transaction is a transaction object to be modified
-
     return '',200
 
 @app.route('/accept_and_verify_transaction', methods=['POST']) #all
@@ -164,7 +165,7 @@ def accept_and_verify_transaction():
     value = response['amount']
     signature = response['signature'].encode('latin-1')
     
-    transaction = node.Transaction(sender,receiver,value,new_transaction = False) #check keys
+    transaction = Transaction.Transaction(sender,receiver,value,new_transaction = False) #check keys
     
     transaction_id = response['transaction_id']
     to_be_signed = response['to_be_signed']

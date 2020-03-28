@@ -45,7 +45,7 @@ def correct_block(hash, difficulty):
 class node:
 	def __init__(self, num_nodes = 0, coordinator = {}):
 
-		self.node_id = None
+		self.id = None
 
 		self.wallet = self.create_wallet()
 
