@@ -362,6 +362,13 @@ if __name__ == "__main__":
 
 	tr = my_node.create_transaction(node2.wallet.public_key, 120)
 
+	if node2.validate_transaction(tr):
+		print('true')
+	else:
+		print('TR is fake')
+
+	exit(-1)
+
 	print(tr.transaction_input)
 	print('---------------------')
 	print(tr.transaction_output)
@@ -383,5 +390,3 @@ if __name__ == "__main__":
 
 	print(my_node.unspent_transactions)
 	print(node2.unspent_transactions)
-
-	my_node.show_blockchain()
