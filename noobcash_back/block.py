@@ -44,13 +44,9 @@ class Block:
 	def myHash(self, previousHash, listOfTransactions):
 		""" Calculates the hash of the block """
 
-		transactions = create_block_content(previousHash, listOfTransactions)
+		block_content = create_block_content(previousHash, listOfTransactions)
 
-		text = str(self.previousHash) + '\n'
-		text += transactions
-		text += str(self.nonce)
-
-		return sha(text)
+		return sha(block_content + str(self.nonce))
 
 	def __str__(self):
 		text = 'Block ID\n'

@@ -19,6 +19,7 @@ from uuid import uuid4
 import base64
 import ast
 import sys
+import numpy as np
 
 """ Define some functions that is needed """
 
@@ -57,8 +58,12 @@ class node:
 
 		self.current_id_count = None
 
-		self.unspent_transactions = None
+		self.unspent_transactions = []
+
+		self.open_transactions = []
+
 		self.num_nodes = None
+
 		if num_nodes:
 			self.boostrap_node = True
 			print("Boostrap node")
@@ -163,6 +168,7 @@ class node:
 		return self.wallet.balance()
 
 	def show_wallet_balance(self):
+		self.wallet.unspent_transactions = self.unspent_transactions
 		self.wallet.showBalance()
 
 	def create_genesis_block(self):
@@ -194,14 +200,16 @@ class node:
 		if self.validate_transaction(new_transaction):
 			self.open_transactions.append(new_transaction)
 
-			if len(open_transactions) == settings.capacity:
+			if len(self.open_transactions) >= settings.capacity:
 
-				nonce = self.mine_block()
+				nonce, previous_hash, mined_transactions = self.mine_block()
 
 				# creates the new block that found
-				new_block = Block(previous_hash, nonce, self.open_transactions)
+				new_block = Block(previous_hash, nonce, mined_transactions)
 
 				self.add_block_to_chain(new_block)
+
+				return new_block
 
 				#broadcast_block(new_block)
 
@@ -216,7 +224,7 @@ class node:
 		difficulty = settings.difficulty
 		previous_hash = self.find_last_block_hash()
 		block_content = create_block_content(previous_hash, to_be_mined)
-
+		
 		nonce = 0
 
 		while(True):
@@ -226,8 +234,8 @@ class node:
 				print("Nonce:", nonce)
 				print("Block ID:", hashed)
 				print("Binary hash lenght", len(hashed))
-
-				return nonce
+				
+				return nonce, previous_hash, to_be_mined
 
 			try:
 				nonce += 1
@@ -241,9 +249,9 @@ class node:
 		# MHTSOOOOO
 		pass
 
-	def add_block_to_chain(block):
+	def add_block_to_chain(self, block):
 		
-		transactions = block.listOfTransactions()
+		transactions = block.listOfTransactions
 
 		for tr in transactions:
 			transaction_input = tr.transaction_input
@@ -261,7 +269,7 @@ class node:
 		self.blockchain.append(block)
 
 
-	def find_last_block_hash():
+	def find_last_block_hash(self):
 		prev = self.blockchain[-1]
 
 		return prev.hash
@@ -303,7 +311,7 @@ class node:
 
 		# Check if the transactions are valid
 		for tr in transactions:
-			if not validate_transaction(tr):
+			if not self.validate_transaction(tr):
 				print("Transaction with ID", tr.transaction_id, "is not valid")
 
 				return False
@@ -345,14 +353,32 @@ if __name__ == "__main__":
 
 	my_node.show_wallet_balance()
 
-	#my_node.show_blockchain()
+	node2 = node()
 
-	receiver, _ = wallet.generate_keys()
+	node2.unspent_transactions = my_node.unspent_transactions
+	node2.blockchain = my_node.blockchain
 
-	tr = my_node.create_transaction(receiver, 120)
+	tr = my_node.create_transaction(node2.wallet.public_key, 120)
 
 	print(tr.transaction_input)
 	print('---------------------')
 	print(tr.transaction_output)
 
+	print()
 	my_node.show_wallet_balance()
+	node2.show_wallet_balance()
+
+	block = my_node.add_transaction_to_block(tr)
+
+	if node2.valid_proof(block):
+		print('block is valid by node 2')
+		node2.add_block_to_chain(block)
+	else:
+		print('gamata')
+
+
+	my_node.show_wallet_balance()
+	node2.show_wallet_balance()
+
+	print(my_node.unspent_transactions)
+	print(node2.unspent_transactions)

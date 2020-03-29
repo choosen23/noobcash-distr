@@ -48,7 +48,7 @@ class wallet:
 
         self.generate_wallet()
 
-        self.transactions = []
+        self.unspent_transactions = []
 
     def generate_wallet(self):
         """ Generates a pair of public/private key using RSA algorithm """
@@ -67,7 +67,7 @@ class wallet:
 
         acc_balance = 0
 
-        for tr in self.transactions:
+        for tr in self.unspent_transactions:
             if tr['wallet_id'] == self.public_key_str:
                 acc_balance += tr['amount']
 
