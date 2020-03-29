@@ -76,12 +76,17 @@ def node_details():
     data['public_key'] = data['public_key'].encode('utf8')
     data['id'] = node.current_id_count
     node.ring[node.current_id_count] = data
+
+    # send_to_new_node(node.open_transactions)
     
     #do transaction
     receiver_key_PEM = node.ring[node.current_id_count]['public_key']
     receiver_key = RSA.importKey(receiver_key_PEM)
     value = 100
     transaction = node.create_transaction(receiver_key,value)
+
+    # node.add_transaction_to_block(transaction)
+
     to_send = transaction.__dict__
     
     print(to_send)

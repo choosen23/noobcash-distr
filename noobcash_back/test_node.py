@@ -213,6 +213,8 @@ class node:
 
 				#broadcast_block(new_block)
 
+		return None
+
 
 	def mine_block(self):
 		if len(self.open_transactions) < settings.capacity:
@@ -369,7 +371,6 @@ if __name__ == "__main__":
 	node2.show_wallet_balance()
 
 	block = my_node.add_transaction_to_block(tr)
-
 	if node2.valid_proof(block):
 		print('block is valid by node 2')
 		node2.add_block_to_chain(block)
@@ -382,3 +383,5 @@ if __name__ == "__main__":
 
 	print(my_node.unspent_transactions)
 	print(node2.unspent_transactions)
+
+	my_node.show_blockchain()
