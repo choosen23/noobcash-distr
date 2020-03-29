@@ -94,7 +94,7 @@ class node:
 		sender_public_key = RSA.importKey(transaction.sender_address.encode('utf8'))
 
 		# Check if it is signed by the sender
-		message = transaction.to_be_singed
+		message = transaction.to_be_signed
 		signature = transaction.signature.encode('latin-1')
 		h = SHA.new(message.encode('utf8'))
 		verifier = PKCS1_v1_5.new(sender_public_key)

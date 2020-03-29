@@ -13,5 +13,6 @@ setup(
     'netifaces',
     'blockchain',
     'pycryptodome',
+    'numpy',
     'Datetime']
 )

@@ -142,9 +142,10 @@ def new_transaction():
     # broadcast transaction
     global node
     response = request.json
-    value = response['amount']
-    receiver_id = response['id']
-    receiver_key = RSA.importKey(node.ring[receiver_id]['public_key'].encode('utf8'))
+    value = int(response['amount'])
+    receiver_id = int(response['id'])
+    print(type(value),type(receiver_id))
+    receiver_key = RSA.importKey(node.ring[receiver_id]['public_key'])
     transaction = node.create_transaction(receiver_key,value)
     
     to_send = transaction.__dict__
@@ -165,6 +166,7 @@ def accept_and_verify_transaction():
     global node 
 
     response = request.json
+    print(response)
     sender = RSA.importKey(response['sender_address'].encode('utf8'))
     receiver = RSA.importKey(response['receiver_address'].encode('utf8'))
     value = response['amount']
@@ -185,7 +187,7 @@ def accept_and_verify_transaction():
         print('Transaction is valid')
     else:
         print('is Not Valid')   
-    node.add_transaction_to_block(transaction)
+    # node.add_transaction_to_block(transaction)
     
     return '',200
 

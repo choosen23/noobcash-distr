@@ -39,9 +39,6 @@ class Transaction:
         if genesis_transaction:
             self.sender_address = sender_address
             self.sender_str = sender_address
-        elif not new_transaction:
-            self.sender_address = sender_address
-            self.sender_str = rsa_to_string(sender_address)
         else:
             self.sender_str = rsa_to_string(sender_address)
             self.sender_address = sender_address.exportKey('PEM').decode('utf8')
@@ -69,7 +66,7 @@ class Transaction:
         self.transaction_output = None
 
         # Text that contains the transaction info, the sender will sign it
-        self.to_be_singed = None
+        self.to_be_signed = None
 
         # The transaction with the sender's signature
         self.signature = None
@@ -99,17 +96,17 @@ class Transaction:
             else:
                 self.transaction_input, self.transaction_output = self.calculate_transaction_IO(previous_transactions)
 
-                self.to_be_singed = self.create_transaction_for_signing()
+                self.to_be_signed = self.create_transaction_for_signing()
 
-                self.signature = self.sign_transaction(self.to_be_singed, sender_private_key).decode('latin-1')
+                self.signature = self.sign_transaction(self.to_be_signed, sender_private_key).decode('latin-1')
 
-                self.text = self.to_be_singed + '\nSignature\n' + str(self.signature) + '\n'
+                self.text = self.to_be_signed + '\nSignature\n' + str(self.signature) + '\n'
 
 
-    def set_transaction_info(self, transaction_id, signature, to_be_singed, text, transaction_input, transaction_output):
+    def set_transaction_info(self, transaction_id, signature, to_be_signed, text, transaction_input, transaction_output):
         self.transaction_id = transaction_id
-        self.signature = signature
-        self.to_be_singed = to_be_singed
+        self.signature = signature.decode('latin-1')
+        self.to_be_signed = to_be_signed
         self.text = text
         self.transaction_input = transaction_input
         self.transaction_output = transaction_output

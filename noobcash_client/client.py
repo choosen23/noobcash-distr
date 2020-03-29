@@ -49,7 +49,14 @@ while True:
 	elif cmd == "help":
 		print(help_message)
 	elif cmd.startswith('t'):
-		args = cmd.split()
+		data = cmd.split()
+		to_send = {
+			'id': data[1],
+			'amount': data[2]
+		}
+		response = requests.post(f'http://127.0.0.1:{args.port}/new_transaction',json= to_send)
+		if response.status_code == 200:
+			print("Transaction is done!")
 	elif cmd == 'exit':
 		exit(-1)
 	elif cmd == exit:
