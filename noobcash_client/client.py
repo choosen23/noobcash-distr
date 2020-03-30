@@ -44,8 +44,8 @@ while True:
 	elif cmd == 'test':
 		response = requests.post(f'http://127.0.0.1:{args.port}/',json={'message':'a simple message'})
 		print("nice")
-	elif cmd == 'view':
-		continue  
+	elif cmd == 'view': 
+		response = requests.get(f'http://127.0.0.1:{args.port}/view_last_transactions')
 	elif cmd == "help":
 		print(help_message)
 	elif cmd.startswith('t'):
@@ -57,6 +57,9 @@ while True:
 		response = requests.post(f'http://127.0.0.1:{args.port}/new_transaction',json= to_send)
 		if response.status_code == 200:
 			print("Transaction is done!")
+		elif response.status_code == 500:
+			print("ERROR!")
+			print("Transaction cannot be Done because you don't have enough money")
 	elif cmd == 'exit':
 		exit(-1)
 	elif cmd == exit:
@@ -73,8 +76,13 @@ while True:
 		to_show = []
 		for x in res:
 			print(x) 
-		
-
+	elif cmd == 'check open_transactions': 
+		response = requests.get(f'http://127.0.0.1:{args.port}/test/open_transactions')
+		for x in response.json():
+			print(x)
+	elif cmd == 'check unspent_transactions': 
+		response = requests.get(f'http://127.0.0.1:{args.port}/test/unspent_transactions')
+		print(response.json())
 	elif cmd == "check id":
 		response = requests.get(f'http://127.0.0.1:{args.port}/test/check_id', params = PARAMS)
 		res = response.json()

@@ -85,7 +85,7 @@ class node:
 
 			self.blockchain = [genesis_block]
 
-			self.wallet.transactions = self.unspent_transactions
+			self.wallet.unspent_transactions = self.unspent_transactions
 
 
 	def validate_transaction(self, transaction):
@@ -165,6 +165,7 @@ class node:
 		return my_wallet
 
 	def wallet_balance(self):
+		self.wallet.unspent_transactions = self.unspent_transactions
 		return self.wallet.balance()
 
 	def show_wallet_balance(self):
@@ -191,7 +192,7 @@ class node:
 
 
 	def create_transaction(self, receiver, value):
-		new_transaction = Transaction(self.wallet.public_key, receiver, value, sender_private_key = self.wallet.private_key, previous_transactions = self.wallet.transactions)
+		new_transaction = Transaction(self.wallet.public_key, receiver, value, sender_private_key = self.wallet.private_key, previous_transactions = self.wallet.unspent_transactions)
 
 		return new_transaction
 
