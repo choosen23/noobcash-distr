@@ -4,6 +4,9 @@ from transaction import Transaction
 from block import create_block_content
 from block import Block
 import settings
+from mining import mine_block
+import consensus
+
 import binascii
 import Crypto
 from Crypto import Random
@@ -191,6 +194,24 @@ class node:
 		return genesis_block
 
 
+	def init_simple_node(self, blockchain, open_transactions):
+		""" Takes the blockchain from the boostrap and initializes its parameters
+			If everything is done with success returns True else returns False """
+
+		genesis_block = blockchain[0]
+		state = consensus.state(genesis_block, open_transactions)
+
+		if state.valid_blockchain:
+			self.blockchain = state.blockchain
+			self.unspent_transactions = state.unspent_transactions
+			self.open_transactions = state.open_transactions
+
+			return True
+
+		else:
+			return False
+
+
 	def create_transaction(self, receiver, value):
 		new_transaction = Transaction(self.wallet.public_key, receiver, value, sender_private_key = self.wallet.private_key, previous_transactions = self.wallet.unspent_transactions)
 
@@ -198,54 +219,26 @@ class node:
 
 
 	def add_transaction_to_block(self, new_transaction):
+		"""
+			Checks what to do with the new transaction that has received by the node
+
+			Returns:
+
+				'OK'         : The transaction is valid and has been put to open transactions
+				'mine'       : The transaction is valid and has been put to open transactions, also the miner has to start mining
+				'rejected'  : The transaction is not valid and has been rejected
+		"""
+
 		if self.validate_transaction(new_transaction):
 			self.open_transactions.append(new_transaction)
 
 			if len(self.open_transactions) >= settings.capacity:
+				return 'mine'
 
-				nonce, previous_hash, mined_transactions = self.mine_block()
+			else:
+				return 'OK'
 
-				# creates the new block that found
-				new_block = Block(previous_hash, nonce, mined_transactions)
-
-				self.add_block_to_chain(new_block)
-
-				return new_block
-
-				#broadcast_block(new_block)
-
-		return None
-
-
-	def mine_block(self):
-		if len(self.open_transactions) < settings.capacity:
-			print("The open transactions are fewer than the required block capacity")
-
-			return None
-
-		to_be_mined = self.open_transactions[:settings.capacity]
-		difficulty = settings.difficulty
-		previous_hash = self.find_last_block_hash()
-		block_content = create_block_content(previous_hash, to_be_mined)
-		
-		nonce = 0
-
-		while(True):
-			hashed = sha(block_content + str(nonce))
-			if correct_block(hashed, difficulty):
-				print("New block is mined with success!")
-				print("Nonce:", nonce)
-				print("Block ID:", hashed)
-				print("Binary hash lenght", len(hashed))
-				
-				return nonce, previous_hash, to_be_mined
-
-			try:
-				nonce += 1
-
-			except Exception as ex:
-				print("nonce reached max value")
-				raise ex
+		return 'rejected'
 
 
 	def broadcast_block(self):
@@ -253,6 +246,20 @@ class node:
 		pass
 
 	def add_block_to_chain(self, block):
+		"""
+			Returns:
+
+				True  : Block has been put in the node's blockchain, open and unspent transactions has been updated
+				False : Block has not been put in the node's blockchain
+		"""
+
+		last_hash = self.find_last_block_hash()
+		prev_hash = block.previousHash
+
+		if prev_hash != last_hash:
+			print('New block cannot be put in the blockchain cause its previous hash is not equal to the hash of the current last block')
+
+			return False
 		
 		transactions = block.listOfTransactions
 
@@ -271,6 +278,8 @@ class node:
 
 		self.blockchain.append(block)
 
+		return True
+
 
 	def find_last_block_hash(self):
 		prev = self.blockchain[-1]
@@ -278,9 +287,16 @@ class node:
 		return prev.hash
 
 	def show_blockchain(self):
+		print('\n------------------------------------------------------------- BLOCKCHAIN STARTS -------------------------------------------------------------\n')
+
 		for i, block in enumerate(self.blockchain):
+			print('++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n\n')
 			print('BLOCK', i, '\n')
 			print(block)
+		
+		print('++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n')
+
+		print('------------------------------------------------------------- BLOCKCHAIN ENDS ------------------------------------------------------------\n')
 
 
 	def valid_proof(self, block):
@@ -315,6 +331,7 @@ class node:
 		# Check if the transactions are valid
 		for tr in transactions:
 			if not self.validate_transaction(tr):
+				print("block contains transactions that are not valid")
 				print("Transaction with ID", tr.transaction_id, "is not valid")
 
 				return False
@@ -325,12 +342,56 @@ class node:
 		return True
 
 
+	def block_placement(self, block):
+		"""
+			Checks what to do with the new block that has already been checked that is valid
+
+			Returns:
+
+				'OK'         : New block is ok to be put in the blockchain, next to the current last block
+				'rejected'   : Block belongs to a blockchain with smaller or equal lenght, so it will be rejected
+				'consensus'  : Block belongs to an unknown blockchain so consensus has to be checked
+		"""
+
+		prev_hash = block.previousHash
+		last_block = self.blockchain[-1]
+
+		if last_block.hash == prev_hash:
+			return 'OK'
+
+		for b in self.blockchain:
+			if b.hash == prev_hash:
+				return 'rejected'
+
+		return 'consensus'
+
 
 	#concencus functions
 
-	def valid_chain(self, chain):
-		#check for the longer chain accroose all nodes
-		pass
+	def valid_chain(self, blockchains):
+		genesis_block = self.blockhain[0]
+		open_transactions = self.open_transactions
+		best_chain = None
+		best_state = None
+
+		for blockchain in blockchains:
+			if best_chain is None:
+				state = consensus.state(genesis_block, open_transactions)
+				if state.valid_blockchain:
+					best_chain = blockchain
+					best_state = state
+			else:
+				if len(blockchain) > len(best_chain):
+					state = consensus.state(genesis_block, open_transactions)
+					if state.valid_blockchain:
+						best_chain = blockchain
+						best_state = state
+
+		self.blockchain = best_state.blockchain
+		self.unspent_transactions = best_state.unspent_transactions
+		self.open_transactions = best_state.open_transactions
+
+		print('Best blockchain has been selected')
 
 
 	def resolve_conflicts(self):
@@ -367,6 +428,8 @@ if __name__ == "__main__":
 		print('true')
 	else:
 		print('TR is fake')
+
+	my_node.show_blockchain()
 
 	exit(-1)
 

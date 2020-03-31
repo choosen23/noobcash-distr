@@ -52,6 +52,9 @@ class Block:
 		text = 'Block ID\n'
 		text += hex(int(self.hash, 2))[2:] + '\n' + '\n'
 
+		if self.genesis:
+			text += '*** GENESIS BLOCK ***\n\n'
+
 		text += 'Previous block ID\n'
 		if self.genesis:
 			text += self.previousHash + '\n' + '\n'
