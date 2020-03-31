@@ -96,6 +96,8 @@ while True:
 		response = requests.get(f'http://127.0.0.1:{args.port}/test/check_id', params = PARAMS)
 		res = response.json()
 		print('Your id is', res['id'])
+	elif cmd == 'check blockchain':
+		response = requests.get(f'http://127.0.0.1:{args.port}/test/blockchain')
 	# If command is uknown print the help message
 	else:
 		print("Uknown Command")

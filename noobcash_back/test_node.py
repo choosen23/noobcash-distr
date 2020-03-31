@@ -307,7 +307,9 @@ class node:
 		hashed = sha(block_content + str(nonce))
 		if not (hashed == block_hash):
 			print("Block hash is fake")
-
+			print(hashed)
+			print(block_hash)
+			print(previous_hash)
 			return False
 
 		# Check the proof of work

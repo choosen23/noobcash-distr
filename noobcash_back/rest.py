@@ -31,7 +31,7 @@ logger = get_task_logger(__name__)
 def mine(block_content):
     logger.info("Starting mining in background")
     nonce = mining.mine_block(block_content)
-    requests.get(f'http://127.0.0.1:5000/mined_block', json = nonce)
+    requests.post(f'http://127.0.0.1:5000/mined_block', json = nonce)
     return nonce
 
 
@@ -83,11 +83,20 @@ def create_blockchain_to_dict(l1):
     l2 = []
     for x in l1:
         y = x.__dict__
-        for i in y:
+        d = y.copy()
+        for i in d:
             if i == 'listOfTransactions':
-                y[i] = create_list_of_dict_transactions(y[i])
-        l2.append(y)
+                d[i] = create_list_of_dict_transactions(d[i])
+        l2.append(d)
     return l2
+
+def create_block_to_dict(b):
+    y = b.__dict__
+    d = y.copy()
+    for i in d:
+        if i == 'listOfTransactions':
+            d[i] = create_list_of_dict_transactions(d[i])
+    return d
 
 #Initializing the coordinator's variables and node
 @app.route('/init_coordinator', methods=['POST']) #bootstrap scope | DONE
@@ -161,6 +170,8 @@ def node_details():
     transaction = node.create_transaction(receiver_key,value)
     
     
+    print("164")
+    node.show_blockchain()    
     res = node.add_transaction_to_block(transaction) # returns none if not mining, or the mining block
     if res == 'mine':
         #print('node is ready to mine')
@@ -173,7 +184,8 @@ def node_details():
         
         task = mine.delay(block_content)
     
-
+    print("176")
+    node.show_blockchain()
     # Broadcast the transaction to all existing nodes in the network
     to_send = transaction.__dict__
     
@@ -208,7 +220,7 @@ def open_transactions():
         open_transactions.append(create_transaction_from_dict(x))
     
     blockchain = request.json['blockchain'] 
-    print(blockchain)
+    # print(blockchain)
     
     new_blockchain = []
     for b in blockchain:
@@ -225,7 +237,7 @@ def open_transactions():
         new_blockchain.append(new_block)
 
     node.init_simple_node(new_blockchain,open_transactions)
-    node.show_blockchain()
+    # node.show_blockchain()
     return '',200
 
 # After all nodes have connected to the network inform all nodes of the network about the network
@@ -271,7 +283,7 @@ def new_transaction():
             continue
         ip = node.ring[x]['ip']
         port = node.ring[x]['port']
-        requests.post(f'http://{ip}:{port}/accept_and_verify_transaction', json=to_send)
+        requests.get(f'http://{ip}:{port}/accept_and_verify_transaction', json=to_send)
     
     return '',200
 
@@ -315,19 +327,40 @@ def index():
     task.revoke(terminate = True,signal='SIGKILL')
     return '',200
 
-@app.route('/mined_block', methods=['GET'])
+@app.route('/mined_block', methods=['POST'])
 def mined_block():
     global node
     nonce = request.json
-    #print(nonce)
-    #print(node.new_previous_hash)
     new_block = mining.create_mined_block(node.new_previous_hash, nonce, node.new_to_be_mined)
-    
-    #print('Block Created with Success')
-    #print(len(new_block.hash))
-    #print(new_block.hash)
+    node.add_block_to_chain(new_block)
+    to_send = create_block_to_dict(new_block)
+    for x in range(node.current_id_count):
+        ip = node.ring[x+1]['ip']
+        port = node.ring[x+1]['port']
+        requests.post(f'http://{ip}:{port}/accept_and_verify_block', json=to_send)
+
     return '',200
 
+@app.route('/accept_and_verify_block', methods=['POST'])
+def accept_and_verify_block():
+    global node
+    b = request.json
+    previous_hash = b['previousHash']
+    timestamp = b['timestamp']
+    nonce = b['nonce']
+    listOfTransactions = []
+    for y in b['listOfTransactions']:
+        listOfTransactions.append(create_transaction_from_dict(y))
+    block_hash = b['hash']
+    genesis = b['genesis']
+    new_block = Block(previous_hash,nonce,listOfTransactions,genesis = genesis,new_block= False)
+    new_block.set_hash(block_hash)
+    if node.valid_proof(new_block):
+        node.add_block_to_chain(new_block)
+        print('I accepted the block')
+    else:
+        print('Sorry easy money')
+    return '',200
 #=======================================================
 #		FOR DEVELOPERS
 #=======================================================
@@ -367,6 +400,11 @@ def test_unspent_transactions():
     global node
     return jsonify(node.unspent_transactions),200
 
+@app.route('/test/blockchain', methods=['GET'])
+def test_blockchain():
+    global node
+    node.show_blockchain()
+    return '',200
 if __name__ == '__main__':
     from argparse import ArgumentParser
 
