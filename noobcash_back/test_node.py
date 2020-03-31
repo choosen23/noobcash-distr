@@ -202,7 +202,7 @@ class node:
 		state = consensus.state(genesis_block, open_transactions)
 
 		if state.valid_blockchain:
-			self.blochchain = state.blochchain
+			self.blockchain = state.blockchain
 			self.unspent_transactions = state.unspent_transactions
 			self.open_transactions = state.open_transactions
 
@@ -387,12 +387,12 @@ class node:
 						best_chain = blockchain
 						best_state = state
 
-		self.blochchain = best_state.blochchain
+		self.blockchain = best_state.blockchain
 		self.unspent_transactions = best_state.unspent_transactions
 		self.open_transactions = best_state.open_transactions
 
 		print('Best blockchain has been selected')
-		
+
 
 	def resolve_conflicts(self):
 		#resolve correct chain
