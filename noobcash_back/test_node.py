@@ -5,6 +5,7 @@ from block import create_block_content
 from block import Block
 import settings
 from mining import mine_block
+import consensus
 
 import binascii
 import Crypto
@@ -193,6 +194,24 @@ class node:
 		return genesis_block
 
 
+	def init_simple_node(self, blockchain, open_transactions):
+		""" Takes the blockchain from the boostrap and initializes its parameters
+			If everything is done with success returns True else returns False """
+
+		genesis_block = blockchain[0]
+		state = consensus.state(genesis_block, open_transactions)
+
+		if state.valid_blockchain:
+			self.blochchain = state.blochchain
+			self.unspent_transactions = state.unspent_transactions
+			self.open_transactions = state.open_transactions
+
+			return True
+
+		else:
+			return False
+
+
 	def create_transaction(self, receiver, value):
 		new_transaction = Transaction(self.wallet.public_key, receiver, value, sender_private_key = self.wallet.private_key, previous_transactions = self.wallet.unspent_transactions)
 
@@ -349,10 +368,31 @@ class node:
 
 	#concencus functions
 
-	def valid_chain(self, chain):
-		#check for the longer chain accroose all nodes
-		pass
+	def valid_chain(self, blockchains):
+		genesis_block = self.blockhain[0]
+		open_transactions = self.open_transactions
+		best_chain = None
+		best_state = None
 
+		for blockchain in blockchains:
+			if best_chain is None:
+				state = consensus.state(genesis_block, open_transactions)
+				if state.valid_blockchain:
+					best_chain = blockchain
+					best_state = state
+			else:
+				if len(blockchain) > len(best_chain):
+					state = consensus.state(genesis_block, open_transactions)
+					if state.valid_blockchain:
+						best_chain = blockchain
+						best_state = state
+
+		self.blochchain = best_state.blochchain
+		self.unspent_transactions = best_state.unspent_transactions
+		self.open_transactions = best_state.open_transactions
+
+		print('Best blockchain has been selected')
+		
 
 	def resolve_conflicts(self):
 		#resolve correct chain
