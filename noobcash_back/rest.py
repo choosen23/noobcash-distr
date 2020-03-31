@@ -227,20 +227,7 @@ def accept_and_verify_transaction():
     response = request.json
     print(response)
 
-    sender = RSA.importKey(response['sender_address'].encode('utf8'))
-    receiver = RSA.importKey(response['receiver_address'].encode('utf8'))
-    value = response['amount']
-    signature = response['signature'].encode('latin-1')
-
-    transaction = Transaction.Transaction(sender,receiver,value,new_transaction = False) #check keys
-    
-    transaction_id = response['transaction_id']
-    to_be_signed = response['to_be_signed']
-    text = response['text']
-    transaction_input = response['transaction_input']
-    transaction_output = response['transaction_output']
-
-    transaction.set_transaction_info(transaction_id,signature,to_be_signed,text,transaction_input,transaction_output)#keys
+    transaction = create_transaction_from_dict(response)
     # is_valid = node.validate_transaction(transaction)
     # if is_valid:
     #     print('Transaction is valid')
