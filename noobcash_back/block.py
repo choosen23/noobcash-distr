@@ -28,7 +28,7 @@ class Block:
 	def __init__(self, previousHash, nonce, listOfTransactions, genesis = False, new_block = True):
 
 		self.previousHash = previousHash
-		self.timestamp = datetime.now()
+		self.timestamp = str(datetime.now())
 		self.nonce = nonce
 		self.listOfTransactions = listOfTransactions
 		self.hash = None
