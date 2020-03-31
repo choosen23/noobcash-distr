@@ -169,12 +169,11 @@ def node_details():
     
     transaction = node.create_transaction(receiver_key,value)
     
-    
-    print("164")
-    node.show_blockchain()    
+     
     res = node.add_transaction_to_block(transaction) # returns none if not mining, or the mining block
+    print(transaction.transaction_input)
     if res == 'mine':
-        #print('node is ready to mine')
+        print('node is ready to mine')
         block_content, previous_hash, to_be_mined = mining.mining_content(node)
         node.new_previous_hash = previous_hash
         node.new_to_be_mined = to_be_mined
@@ -184,8 +183,6 @@ def node_details():
         
         task = mine.delay(block_content)
     
-    print("176")
-    node.show_blockchain()
     # Broadcast the transaction to all existing nodes in the network
     to_send = transaction.__dict__
     
@@ -356,8 +353,10 @@ def accept_and_verify_block():
     new_block = Block(previous_hash,nonce,listOfTransactions,genesis = genesis,new_block= False)
     new_block.set_hash(block_hash)
     if node.valid_proof(new_block):
-        node.add_block_to_chain(new_block)
-        print('I accepted the block')
+        if node.add_block_to_chain(new_block):
+            print('I accepted the block')
+        else:
+            print('i didnt add it')
     else:
         print('Sorry easy money')
     return '',200
@@ -405,6 +404,7 @@ def test_blockchain():
     global node
     node.show_blockchain()
     return '',200
+
 if __name__ == '__main__':
     from argparse import ArgumentParser
 

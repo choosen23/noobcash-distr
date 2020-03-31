@@ -7,6 +7,8 @@ from Crypto.Hash import SHA
 from Crypto.PublicKey import RSA
 from Crypto.Signature import PKCS1_v1_5
 
+import numpy as np
+
 class state:
 
 	def __init__(self, genesis_block, open_transactions):
@@ -24,6 +26,11 @@ class state:
 		self.valid_blockchain = True
 
 	
+	def find_last_block_hash(self):
+		prev = self.blockchain[-1]
+
+		return prev.hash	
+
 	def validate_blockchain(self, blockhain):
 		for block in blockhain:
 			if block.genesis:

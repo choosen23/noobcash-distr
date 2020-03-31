@@ -194,12 +194,12 @@ class node:
 
 		genesis_block = blockchain[0]
 		state = consensus.state(genesis_block, open_transactions)
-
+		state.validate_blockchain(blockchain)
 		if state.valid_blockchain:
 			self.blockchain = state.blockchain
 			self.unspent_transactions = state.unspent_transactions
 			self.open_transactions = state.open_transactions
-
+			print(len(self.blockchain)) # TODO
 			return True
 
 		else:
@@ -207,7 +207,7 @@ class node:
 
 
 	def create_transaction(self, receiver, value):
-		new_transaction = Transaction(self.wallet.public_key, receiver, value, sender_private_key = self.wallet.private_key, previous_transactions = self.wallet.unspent_transactions)
+		new_transaction = Transaction(self.wallet.public_key, receiver, value, sender_private_key = self.wallet.private_key, previous_transactions = self.unspent_transactions)
 
 		return new_transaction
 
