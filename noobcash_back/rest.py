@@ -24,16 +24,15 @@ app.config["DEBUG"] = True
 
 celery = make_celery(app)
 node = None
-
+task = None
 logger = get_task_logger(__name__)
 
 @celery.task(name = 'rest.mine')
-def mine(str):
+def mine(block_content):
     logger.info("Starting mining in background")
-    logger.info(f'{str}')
-    #new_block = mining.mine_block(node)
-    requests.get(f'http://127.0.0.1:5000/hello')
-    return ''
+    nonce = mining.mine_block(block_content)
+    requests.get(f'http://127.0.0.1:5000/mined_block', json = nonce)
+    return nonce
 
 
 
@@ -74,6 +73,16 @@ def create_transaction_from_dict(l1):
     transaction.set_transaction_info(transaction_id,signature,to_be_signed,text,transaction_input,transaction_output)#keys
     return transaction
 
+def create_blockchain_to_dict(l1):
+    l2 = []
+    for x in l1:
+        y = x.__dict__
+        for i in y:
+            if i == 'listOfTransactions':
+                y[i] = create_list_of_dict_transactions(y[i])
+        l2.append(y)
+    return l2
+
 #Initializing the coordinator's variables and node
 @app.route('/init_coordinator', methods=['POST']) #bootstrap scope | DONE
 def init_coordinator():
@@ -83,7 +92,6 @@ def init_coordinator():
     ip = ni.ifaddresses('eth1')[ni.AF_INET][0]['addr']
     if not ip.startswith('192.'):
         ip = ni.ifaddresses('eth2')[ni.AF_INET][0]['addr']
-
 
     coordinator_details={
         'port': port,
@@ -131,9 +139,10 @@ def node_details():
     # Inform the upcoming node for previous open & unspent transactions of the network that bootstrap has
     list_of_open_transactions = create_list_of_dict_transactions(node.open_transactions)
     
+    blockchain = create_blockchain_to_dict(node.blockchain)
     to_send = {}
+    to_send['blockchain'] = blockchain
     to_send['open_transactions'] = list_of_open_transactions
-    to_send['unspent_transactions'] = node.unspent_transactions
     ip = node.ring[node.current_id_count]['ip']
     port = node.ring[node.current_id_count]['port']
     requests.post(f'http://{ip}:{port}/open_transactions', json=to_send)
@@ -148,8 +157,16 @@ def node_details():
     
     res = node.add_transaction_to_block(transaction) # returns none if not mining, or the mining block
     if res == 'mine':
-        print("Starting Mining from /new_node_came")
-        mine.delay("helloooooo")
+        #print('node is ready to mine')
+        block_content, previous_hash, to_be_mined = mining.mining_content(node)
+        node.new_previous_hash = previous_hash
+        node.new_to_be_mined = to_be_mined
+        #print(node.new_previous_hash)
+        #print(f'{block_content}\n{previous_hash}\n{to_be_mined}')
+        global task
+        
+        task = mine.delay(block_content)
+    
 
     # Broadcast the transaction to all existing nodes in the network
     to_send = transaction.__dict__
@@ -178,16 +195,14 @@ def node_details():
 # Taking the history of open and unpsent transactions from bootstrap
 @app.route('/open_transactions', methods = ['POST']) # simple node scope
 def open_transactions():
-    
     global node
     open_transactions_dict = request.json['open_transactions']
-    
     open_transactions=[]
     for x in open_transactions_dict:
         open_transactions.append(create_transaction_from_dict(x))
     
-    unspent_transactions = request.json['unspent_transactions'] 
-    node.unspent_transactions = unspent_transactions
+    blockchain = request.json['blockchain'] 
+    print(blockchain)
     node.open_transactions = open_transactions
     return '',200
 
@@ -244,7 +259,7 @@ def accept_and_verify_transaction():
     global node 
 
     response = request.json
-    print(response)
+    #print(response)
 
     transaction = create_transaction_from_dict(response)
     # is_valid = node.validate_transaction(transaction)
@@ -272,15 +287,23 @@ def show_balance():
     }
     return jsonify(to_send),200
 
-@app.route('/', methods=['GET'])
+@app.route('/', methods=['POST'])
 def index():
-    print('Asychronous started')
-    mine.delay()
+    global task
+    task.revoke(terminate = True,signal='SIGKILL')
     return '',200
 
-@app.route('/hello', methods=['GET'])
-def hello():
-    print('Block Created with Success')
+@app.route('/mined_block', methods=['GET'])
+def mined_block():
+    global node
+    nonce = request.json
+    #print(nonce)
+    #print(node.new_previous_hash)
+    new_block = mining.create_mined_block(node.new_previous_hash, nonce, node.new_to_be_mined)
+    
+    #print('Block Created with Success')
+    #print(len(new_block.hash))
+    #print(new_block.hash)
     return '',200
 
 #=======================================================

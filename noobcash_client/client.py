@@ -44,8 +44,7 @@ while True:
 		response = requests.get(f'http://127.0.0.1:{args.port}/show_balance')
 		print(str(response.json()['balance']) + ' NBC')
 	elif cmd == 'test':
-		response = requests.post(f'http://127.0.0.1:{args.port}/',json={'message':'a simple message'})
-		print("nice")
+		response = requests.post(f'http://127.0.0.1:{args.port}/')
 	# View the transactions of last blockchain's block
 	elif cmd == 'view': 
 		response = requests.get(f'http://127.0.0.1:{args.port}/view_last_transactions')
