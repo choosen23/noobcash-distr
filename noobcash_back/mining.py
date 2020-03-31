@@ -50,10 +50,6 @@ def mine_block(block_content):
 
 			return nonce
 				
-			# creates the new block that found
-			new_block = Block(previous_hash, nonce, to_be_mined)
-
-			return new_block
 
 		try:
 			nonce += 1
