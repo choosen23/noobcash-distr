@@ -419,11 +419,13 @@ if __name__ == "__main__":
 
 	res = my_node.add_transaction_to_block(tr)
 
-	if res == 'mine':
-		print('node is ready to mine')
-		block_content, previous_hash, to_be_mined = mining.mining_content(my_node)
-		nonce = mining.mine_block(block_content)
-		new_block = mining.create_mined_block(previous_hash, nonce, to_be_mined)
+	# if res == 'mine':
+	# 	print('node is ready to mine')
+	# 	block_content, previous_hash, to_be_mined = mining.mining_content(my_node)
+	# 	nonce = mining.mine_block(block_content)
+	# 	new_block = mining.create_mined_block(previous_hash, nonce, to_be_mined)
+
+	my_node.show_blockchain()
 
 	exit(-1)
 

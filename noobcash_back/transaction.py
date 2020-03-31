@@ -112,6 +112,12 @@ class Transaction:
         self.transaction_input = transaction_input
         self.transaction_output = transaction_output
 
+    def set_genesis_transaction_info(self, transaction_id, text, transaction_input, transaction_output):
+        self.transaction_id = transaction_id
+        self.text = text
+        self.transaction_input = transaction_input
+        self.transaction_output = transaction_output
+
     def calculate_transaction_id(self):
         """ Finds a unique id to give to the transaction by combining
             the current time in seconds and the sender's public key """
