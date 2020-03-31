@@ -226,7 +226,7 @@ class node:
 
 				'OK'         : The transaction is valid and has been put to open transactions
 				'mine'       : The transaction is valid and has been put to open transactions, also the miner has to start mining
-				'consensus'  : The transaction is not valid and has been rejected
+				'rejected'  : The transaction is not valid and has been rejected
 		"""
 
 		if self.validate_transaction(new_transaction):
