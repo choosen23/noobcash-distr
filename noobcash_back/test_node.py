@@ -4,9 +4,9 @@ from transaction import Transaction
 from block import create_block_content
 from block import Block
 import settings
-from mining import mine_block
+import mining
+from mining import correct_block
 import consensus
-from mining import correct_block 
 
 import binascii
 import Crypto
@@ -414,16 +414,16 @@ if __name__ == "__main__":
 	node2 = node()
 
 	node2.unspent_transactions = my_node.unspent_transactions
-	node2.blockchain = my_node.blockchain
 
 	tr = my_node.create_transaction(node2.wallet.public_key, 120)
 
-	if node2.validate_transaction(tr):
-		print('true')
-	else:
-		print('TR is fake')
+	res = my_node.add_transaction_to_block(tr)
 
-	my_node.show_blockchain()
+	if res == 'mine':
+		print('node is ready to mine')
+		block_content, previous_hash, to_be_mined = mining.mining_content(my_node)
+		nonce = mining.mine_block(block_content)
+		new_block = mining.create_mined_block(previous_hash, nonce, to_be_mined)
 
 	exit(-1)
 
