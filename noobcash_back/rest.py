@@ -28,10 +28,10 @@ node = None
 logger = get_task_logger(__name__)
 
 @celery.task(name = 'rest.mine')
-def mine(node):
+def mine(str):
     logger.info("Starting mining in background")
-    logger.info("Starting mining in background")
-    new_block = mining.mine_block(node)
+    logger.info(f'{str}')
+    #new_block = mining.mine_block(node)
     requests.get(f'http://127.0.0.1:5000/hello')
     return ''
 
@@ -149,7 +149,7 @@ def node_details():
     res = node.add_transaction_to_block(transaction) # returns none if not mining, or the mining block
     if res == 'mine':
         print("Starting Mining from /new_node_came")
-        mine.delay(node)
+        mine.delay("helloooooo")
 
     # Broadcast the transaction to all existing nodes in the network
     to_send = transaction.__dict__
