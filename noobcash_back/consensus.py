@@ -1,5 +1,5 @@
 from block import create_block_content
-from mining import sha
+from mining import sha, correct_block
 import transaction
 import settings
 

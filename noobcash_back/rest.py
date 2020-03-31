@@ -7,16 +7,37 @@ import netifaces as ni
 import settings
 import transaction as Transaction
 import json
-
+from Crypto.PublicKey import RSA
 from Crypto.Signature import PKCS1_v1_5
 from Crypto.Hash import SHA
+from my_celery import make_celery
+import mining 
+from celery.utils.log import get_task_logger
 
-from Crypto.PublicKey import RSA
 app = Flask(__name__)
 CORS(app)
+app.config.update(
+    CELERY_BROKER_URL='redis://localhost:6379',
+    CELERY_RESULT_BACKEND='redis://localhost:6379'
+)
 app.config["DEBUG"] = True
 
+celery = make_celery(app)
 node = None
+
+logger = get_task_logger(__name__)
+
+@celery.task(name = 'rest.mine')
+def mine(node):
+    logger.info("Starting mining in background")
+    logger.info("Starting mining in background")
+    new_block = mining.mine_block(node)
+    requests.get(f'http://127.0.0.1:5000/hello')
+    return ''
+
+
+
+    #do mining
 
 # Use to extract data from ring and decode the keys to send them via json
 def copy_list_with_dicts_and_decode(l1): 
@@ -70,7 +91,7 @@ def init_coordinator():
     }
     global node
     node = nd.node( num_nodes = participants,coordinator = coordinator_details)
-
+    
     return '',200
 # Initializing a simple node of the network and it's variables
 @app.route('/init_simple_node', methods=['POST']) #simple node scope | DONE
@@ -107,7 +128,7 @@ def node_details():
     data['id'] = node.current_id_count
     node.ring[node.current_id_count] = data
     
-    # Inform the upcoming node for previous open transactions of the network that bootstrap has
+    # Inform the upcoming node for previous open & unspent transactions of the network that bootstrap has
     list_of_open_transactions = create_list_of_dict_transactions(node.open_transactions)
     
     to_send = {}
@@ -123,8 +144,12 @@ def node_details():
     value = 100
     
     transaction = node.create_transaction(receiver_key,value)
-    if transaction.canBeDone: # TODO
-        node.add_transaction_to_block(transaction) # returns none if not mining, or the mining block
+    
+    
+    res = node.add_transaction_to_block(transaction) # returns none if not mining, or the mining block
+    if res == 'mine':
+        print("Starting Mining from /new_node_came")
+        mine.delay(node)
 
     # Broadcast the transaction to all existing nodes in the network
     to_send = transaction.__dict__
@@ -144,18 +169,12 @@ def node_details():
     if node.current_id_count == node.num_nodes-1:
         port = node.ring[0]['port']     
         requests.post(f'http://127.0.0.1:{port}/send_list_of_nodes')
-    
-    #for each node send the details
-    # to_send = {
-    #     'id': node.current_id_count,
-    #     'blockchain': node.blockchain, # TODO: convert obj to readable
-    #     'unspent_transactions': node.unspent_transactions
-    # }
-    
+
+
     # Finally return the id of the node connected
     to_send = {'id' :  node.current_id_count}
     return jsonify(to_send),200
-
+    
 # Taking the history of open and unpsent transactions from bootstrap
 @app.route('/open_transactions', methods = ['POST']) # simple node scope
 def open_transactions():
@@ -253,23 +272,16 @@ def show_balance():
     }
     return jsonify(to_send),200
 
-@app.route('/', methods=['POST'])
+@app.route('/', methods=['GET'])
 def index():
-    global node
-    print(request.json['message'])
-    message = request.json['message'].encode('utf8')
-    h = SHA.new(message)
-    signer = PKCS1_v1_5.new(node.wallet.private_key)
-    signature = signer.sign(h)
-    decoded_signature = signature.decode('latin-1')
-    data = {
-        'message': request.json['message'],
-        'signature': decoded_signature
-    }
-    print('hi')
-    response = requests.post(f'http://{settings.COORDINATOR_IP}:{settings.COORDINATOR_PORT}/accept_and_verify_transaction', json=data)
+    print('Asychronous started')
+    mine.delay()
     return '',200
 
+@app.route('/hello', methods=['GET'])
+def hello():
+    print('Block Created with Success')
+    return '',200
 
 #=======================================================
 #		FOR DEVELOPERS

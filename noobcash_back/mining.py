@@ -13,7 +13,14 @@ def sha(text):
 
 	return bin_string
 
+def correct_block(hash, difficulty):
+	sha_output_len = 160
 
+	if (sha_output_len - len(hash)) >= difficulty:
+		return True
+	
+	return False
+	
 def mine_block(node):
 	if len(node.open_transactions) < settings.capacity:
 		print("The open transactions are fewer than the required block capacity")
@@ -26,7 +33,7 @@ def mine_block(node):
 	block_content = create_block_content(previous_hash, to_be_mined)
 		
 	nonce = 0
-
+	print("mpika")
 	while(True):
 		hashed = sha(block_content + str(nonce))
 		if correct_block(hashed, difficulty):

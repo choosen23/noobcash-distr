@@ -1,5 +1,5 @@
 COORDINATOR_PORT=5000
-COORDINATOR_IP='192.168.1.5'
+COORDINATOR_IP='192.168.1.4'
 
-capacity = 5
-difficulty = 10
+capacity=1
+difficulty=10

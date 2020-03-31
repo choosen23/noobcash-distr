@@ -6,6 +6,7 @@ from block import Block
 import settings
 from mining import mine_block
 import consensus
+from mining import correct_block 
 
 import binascii
 import Crypto
@@ -38,13 +39,6 @@ def sha(text):
 	return bin_string
 
 
-def correct_block(hash, difficulty):
-	sha_output_len = 160
-
-	if (sha_output_len - len(hash)) >= difficulty:
-		return True
-	
-	return False
 
 class node:
 	def __init__(self, num_nodes = 0, coordinator = {}):
