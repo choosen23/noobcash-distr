@@ -13,7 +13,7 @@ from Crypto.Hash import SHA
 from my_celery import make_celery
 import mining 
 from celery.utils.log import get_task_logger
-
+from block import Block
 app = Flask(__name__)
 CORS(app)
 app.config.update(
@@ -57,20 +57,26 @@ def create_list_of_dict_transactions(l1):
 
 # Use by taking a transaction.__dict__ and convert it to a transaction object for further using
 def create_transaction_from_dict(l1):
-    sender = RSA.importKey(l1['sender_address'].encode('utf8'))
     receiver = RSA.importKey(l1['receiver_address'].encode('utf8'))
     value = l1['amount']
-    signature = l1['signature'].encode('latin-1')
-
-    transaction = Transaction.Transaction(sender,receiver,value,new_transaction = False) 
-    
     transaction_id = l1['transaction_id']
-    to_be_signed = l1['to_be_signed']
     text = l1['text']
     transaction_input = l1['transaction_input']
     transaction_output = l1['transaction_output']
+    isGenesis = l1['isGenesis']
+    if l1['isGenesis'] == False:
+        sender = RSA.importKey(l1['sender_address'].encode('utf8'))
+        signature = l1['signature'].encode('latin-1')
+        to_be_signed = l1['to_be_signed']
+        transaction = Transaction.Transaction(sender,receiver,value, genesis_transaction = isGenesis, new_transaction = False) 
 
-    transaction.set_transaction_info(transaction_id,signature,to_be_signed,text,transaction_input,transaction_output)#keys
+        transaction.set_transaction_info(transaction_id,signature,to_be_signed,text,transaction_input,transaction_output)#keys
+    else:
+        sender = l1['sender_address']
+        receiver = RSA.importKey(l1['receiver_address'].encode('utf8'))
+
+        transaction = Transaction.Transaction(sender,receiver,value, genesis_transaction = isGenesis, new_transaction = False)
+        transaction.set_genesis_transaction_info(transaction_id,text,transaction_input,transaction_output)
     return transaction
 
 def create_blockchain_to_dict(l1):
@@ -203,7 +209,23 @@ def open_transactions():
     
     blockchain = request.json['blockchain'] 
     print(blockchain)
-    node.open_transactions = open_transactions
+    
+    new_blockchain = []
+    for b in blockchain:
+        previous_hash = b['previousHash']
+        timestamp = b['timestamp']
+        nonce = b['nonce']
+        listOfTransactions = []
+        for y in b['listOfTransactions']:
+            listOfTransactions.append(create_transaction_from_dict(y))
+        block_hash = b['hash']
+        genesis = b['genesis']
+        new_block = Block(previous_hash,nonce,listOfTransactions,genesis = genesis,new_block= False)
+        new_block.set_hash(block_hash)
+        new_blockchain.append(new_block)
+
+    node.init_simple_node(new_blockchain,open_transactions)
+    node.show_blockchain()
     return '',200
 
 # After all nodes have connected to the network inform all nodes of the network about the network

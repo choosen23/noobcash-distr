@@ -74,6 +74,7 @@ class Transaction:
         # Text that contains the transaction info that will be put in the block
         self.text = None
 
+        self.isGenesis = genesis_transaction
         if new_transaction:
 
             self.transaction_id = self.calculate_transaction_id()
