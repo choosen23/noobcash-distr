@@ -2,4 +2,4 @@ COORDINATOR_PORT=5000
 COORDINATOR_IP='192.168.1.4'
 
 capacity=1
-difficulty=5
+difficulty=20

@@ -25,6 +25,7 @@ app.config["DEBUG"] = True
 celery = make_celery(app)
 node = None
 task = None
+i_am_mining = False
 logger = get_task_logger(__name__)
 
 @celery.task(name = 'rest.mine')
@@ -171,8 +172,9 @@ def node_details():
     
      
     res = node.add_transaction_to_block(transaction) # returns none if not mining, or the mining block
-    print(transaction.transaction_input)
-    if res == 'mine':
+    #print(transaction.transaction_input)
+    global i_am_mining
+    if res == 'mine' and i_am_mining == False:
         print('node is ready to mine')
         block_content, previous_hash, to_be_mined = mining.mining_content(node)
         node.new_previous_hash = previous_hash
@@ -180,7 +182,7 @@ def node_details():
         #print(node.new_previous_hash)
         #print(f'{block_content}\n{previous_hash}\n{to_be_mined}')
         global task
-        
+        i_am_mining = True
         task = mine.delay(block_content)
     
     # Broadcast the transaction to all existing nodes in the network
@@ -330,12 +332,23 @@ def mined_block():
     nonce = request.json
     new_block = mining.create_mined_block(node.new_previous_hash, nonce, node.new_to_be_mined)
     node.add_block_to_chain(new_block)
+    global i_am_mining
+    i_am_mining = False
     to_send = create_block_to_dict(new_block)
     for x in range(node.current_id_count):
         ip = node.ring[x+1]['ip']
         port = node.ring[x+1]['port']
         requests.post(f'http://{ip}:{port}/accept_and_verify_block', json=to_send)
-
+    if len(node.open_transactions) >= settings.capacity:
+        print('node is ready to mine')
+        block_content, previous_hash, to_be_mined = mining.mining_content(node)
+        node.new_previous_hash = previous_hash
+        node.new_to_be_mined = to_be_mined
+        #print(node.new_previous_hash)
+        #print(f'{block_content}\n{previous_hash}\n{to_be_mined}')
+        global task
+        i_am_mining = True
+        task = mine.delay(block_content)
     return '',200
 
 @app.route('/accept_and_verify_block', methods=['POST'])
