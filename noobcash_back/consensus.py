@@ -25,11 +25,12 @@ class state:
 
 		self.valid_blockchain = True
 
-	
+
 	def find_last_block_hash(self):
 		prev = self.blockchain[-1]
 
 		return prev.hash	
+
 
 	def validate_blockchain(self, blockhain):
 		for block in blockhain:
@@ -79,8 +80,6 @@ class state:
 		self.blockchain.append(block)
 
 		return True
-
-
 
 
 	def validate_block(self, block):
@@ -151,7 +150,7 @@ class state:
 		available_amount = 0
 		for tr in transaction_input:
 			if tr not in self.unspent_transactions:
-				print("Input unspent transaction has already been spent")
+				print("Input unspent transaction has already been spent or never existed")
 
 				return False
 

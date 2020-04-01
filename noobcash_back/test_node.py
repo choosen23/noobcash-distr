@@ -110,7 +110,7 @@ class node:
 		available_amount = 0
 		for tr in transaction_input:
 			if tr not in self.unspent_transactions:
-				print("Input unspent transaction has already been spent")
+				print("Input unspent transaction has already been spent or never existed")
 
 				return False
 
