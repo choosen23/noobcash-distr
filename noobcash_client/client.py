@@ -21,7 +21,6 @@ parser = argparse.ArgumentParser()
 parser.add_argument('port', help='port of the backend process', type=int)
 parser.add_argument('-n', help='Init as coordinator, for N partipipants', type=int)
 args = parser.parse_args()
-
 # initialize the node depends on his nature
 PARTICIPANTS = args.n
 PARAMS = { 'id': 'bootstrap'} if PARTICIPANTS else {'id': 'single_node'}
@@ -33,6 +32,9 @@ try:
 		'port' : args.port
 	})
 	assert response.status_code == 200
+
+	my_id = response.json()
+	print(my_id)
 except Exception as e:
     print(f'Could not connect to backend service (probably false port): {e.__class__.__name__}: {e}')
     exit(-1)
@@ -44,7 +46,25 @@ while True:
 		response = requests.get(f'http://127.0.0.1:{args.port}/show_balance')
 		print(str(response.json()['balance']) + ' NBC')
 	elif cmd == 'test':
-		response = requests.post(f'http://127.0.0.1:{args.port}/')
+		f = open(f"../transactions/5nodes/transactions{my_id}.txt", "r")
+		for x in f:
+			line = x.split()
+			receiver = line[0].split('d')[1]
+			amount = line[1]
+			to_send = {
+			'id': receiver,
+			'amount': amount
+			}
+			print("******Transactions*****")
+			print("send to id:",receiver,"the amount:",amount)
+			print(type(receiver),type(amount))
+			response = requests.post(f'http://127.0.0.1:{args.port}/new_transaction',json= to_send)
+			if response.status_code == 200:
+				print("Transaction is done!")
+			elif response.status_code == 500:
+				print("ERROR!")
+				print("Transaction cannot be Done because you don't have enough money")
+		continue
 	# View the transactions of last blockchain's block
 	elif cmd == 'view': 
 		response = requests.get(f'http://127.0.0.1:{args.port}/view_last_transactions')
@@ -96,7 +116,8 @@ while True:
 	elif cmd == "check id":
 		response = requests.get(f'http://127.0.0.1:{args.port}/test/check_id', params = PARAMS)
 		res = response.json()
-		print('Your id is', res['id'])
+		#print('Your id is', res['id'])
+		print(id)
 	elif cmd == 'check blockchain':
 		response = requests.get(f'http://127.0.0.1:{args.port}/test/blockchain')
 	# If command is uknown print the help message

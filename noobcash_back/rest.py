@@ -132,7 +132,7 @@ def init_coordinator():
     global node
     node = nd.node( num_nodes = participants,coordinator = coordinator_details)
     
-    return '',200
+    return str(node.id),200
 # Initializing a simple node of the network and it's variables
 @app.route('/init_simple_node', methods=['POST']) #simple node scope | DONE
 def init_node():
@@ -154,7 +154,7 @@ def init_node():
     
     response = requests.post(f'http://{settings.COORDINATOR_IP}:{settings.COORDINATOR_PORT}/new_node_came', json=data)
     node.id = response.json()['id']
-    return '',200
+    return str(node.id),200
 
 # Do the essentials after a node is being connected to the network
 @app.route('/new_node_came',methods= ['POST']) # bootstrap scope
@@ -283,27 +283,29 @@ def new_transaction():
     response = request.json
     value = int(response['amount'])
     receiver_id = int(response['id'])
-    
+    print('new transaction:',value, type(value),'to receiver:',receiver_id)
     #Create transaction
     receiver_key = RSA.importKey(node.ring[receiver_id]['public_key'])
     transaction = node.create_transaction(receiver_key,value)
+    print(transaction.canBeDone)
     if transaction.canBeDone == False:
         return '',500
     
     res = node.add_transaction_to_block(transaction) # returns none if not mining, or the mining block
     #print(transaction.transaction_input)
+
     global i_am_mining
     if res == 'mine' and i_am_mining == False:
         start_mining()
     
     #Broadcast to the network
-    to_send = transaction.__dict__
-    for x in range(len(node.ring)):
-        if x == node.id:
-            continue
-        ip = node.ring[x]['ip']
-        port = node.ring[x]['port']
-        requests.post(f'http://{ip}:{port}/accept_and_verify_transaction', json=to_send)
+    # to_send = transaction.__dict__
+    # for x in range(len(node.ring)):
+    #     if x == node.id:
+    #         continue
+    #     ip = node.ring[x]['ip']
+    #     port = node.ring[x]['port']
+    #     requests.post(f'http://{ip}:{port}/accept_and_verify_transaction', json=to_send)
     
     return '',200
 
@@ -418,7 +420,7 @@ def accept_and_verify_block():
                 ip = x['ip']
                 port = x['port']
                 res = requests.get(f'http://{ip}:{port}/give_blockchain')
-                print(f'http://{ip}:{port}',res.json())
+                #print(f'http://{ip}:{port}',res.json())
                 new_blockchain = [] # TODO the function 
                 for b in res.json():
                     previous_hash = b['previousHash']

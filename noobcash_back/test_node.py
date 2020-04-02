@@ -199,7 +199,7 @@ class node:
 			self.blockchain = state.blockchain
 			self.unspent_transactions = state.unspent_transactions
 			self.open_transactions = state.open_transactions
-			print(len(self.blockchain)) # TODO
+			
 			return True
 
 		else:
