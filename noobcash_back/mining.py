@@ -5,7 +5,7 @@ import params
 from random import randint
 from Crypto.Hash import SHA
 
-MAX_INT =  9223372036854775807
+MAX_INT = 9223372036854775807
 
 def sha(text):
 	""" Hash the text with SHA encryption

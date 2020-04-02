@@ -205,6 +205,18 @@ class node:
 			return False
 
 
+	def last_block_transactions(self):
+		last_block = self.blockchain[-1]
+		transactions = last_block.listOfTransactions
+
+		text = 'Transactions inside last block:\n\n'
+
+		##########################################
+
+		return text
+
+
+
 	def create_transaction(self, receiver, value):
 		new_transaction = Transaction(self.wallet.public_key, receiver, value, sender_private_key = self.wallet.private_key, previous_transactions = self.unspent_transactions)
 
