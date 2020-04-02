@@ -235,7 +235,7 @@ class node:
 		return 'rejected'
 
 
-	def recalculate(open_tr):
+	def recalculate(self, open_tr):
 
 		unspent = [] # contains all the unspent transactions of the sender
 		available_amount = 0
@@ -426,16 +426,20 @@ class node:
 		for blockchain in blockchains:
 			if best_chain is None:
 				state = consensus.state(genesis_block, open_transactions)
+				state.validate_blockchain(blockchain)
 				if state.valid_blockchain:
 					best_chain = blockchain
 					best_state = state
 			else:
 				if len(blockchain) > len(best_chain):
 					state = consensus.state(genesis_block, open_transactions)
+					state.validate_blockchain(blockchain)
 					if state.valid_blockchain:
 						best_chain = blockchain
 						best_state = state
-
+		
+			print("test_Node: len(best chain)", len(best_chain))
+			print("Test_node: len(best state)", len(best_state.blockchain))
 		self.blockchain = best_state.blockchain
 		self.unspent_transactions = best_state.unspent_transactions
 		self.open_transactions = best_state.open_transactions

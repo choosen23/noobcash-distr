@@ -2,7 +2,10 @@ from block import create_block_content
 from block import Block
 import settings
 
+from random import randint
 from Crypto.Hash import SHA
+
+MAX_INT =  9223372036854775807
 
 def sha(text):
 	""" Hash the text with SHA encryption
@@ -38,7 +41,7 @@ def mining_content(node):
 def mine_block(block_content):
 	difficulty = settings.difficulty
 		
-	nonce = 0
+	nonce = randint(0, MAX_INT)
 
 	while(True):
 		hashed = sha(block_content + str(nonce))
@@ -52,7 +55,7 @@ def mine_block(block_content):
 				
 
 		try:
-			nonce += 1
+			nonce = randint(0, MAX_INT)
 
 		except Exception as ex:
 			print("nonce reached max value")

@@ -12,7 +12,10 @@ setup(
     'flask_cors',
     'netifaces',
     'blockchain',
+    'requests',
     'pycryptodome',
     'numpy',
+    'celery',
+    'redis',
     'Datetime']
 )
