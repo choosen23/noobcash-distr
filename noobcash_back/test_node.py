@@ -287,7 +287,7 @@ class node:
 		open_tr.transaction_output = output_trs
 
 		return open_tr
-		
+
 
 	def add_block_to_chain(self, block):
 		"""

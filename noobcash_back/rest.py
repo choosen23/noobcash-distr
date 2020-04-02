@@ -1,28 +1,26 @@
 import requests
 from flask import Flask, jsonify, request, render_template, g
 from flask_cors import CORS
-import test_node as nd
+import node as nd
 import json
 import netifaces as ni
 import settings
+import params
+# import block
+# import node
+# import blockchain
+# import wallet
 import transaction as Transaction
 import json
-from Crypto.PublicKey import RSA
+
 from Crypto.Signature import PKCS1_v1_5
 from Crypto.Hash import SHA
-from my_celery import make_celery
-import mining 
-from celery.utils.log import get_task_logger
-from block import Block
+
+from Crypto.PublicKey import RSA
 app = Flask(__name__)
 CORS(app)
-app.config.update(
-    CELERY_BROKER_URL='redis://localhost:6379',
-    CELERY_RESULT_BACKEND='redis://localhost:6379'
-)
 app.config["DEBUG"] = True
 
-celery = make_celery(app)
 node = None
 task = None
 i_am_mining = False
@@ -130,11 +128,11 @@ def init_coordinator():
         'ip': ip
     }
     global node
-    node = nd.node( num_nodes = participants,coordinator = coordinator_details)
-    
-    return str(node.id),200
-# Initializing a simple node of the network and it's variables
-@app.route('/init_simple_node', methods=['POST']) #simple node scope | DONE
+    node = nd.node(participants,coordinator_details)
+
+    return '',200
+
+@app.route('/init_simple_node', methods=['POST']) #simple node DONE
 def init_node():
 
     port = request.json['port']
@@ -145,45 +143,29 @@ def init_node():
 
     global node
     node = nd.node()
-    
-    #Send simple node's information to boostrap node
     data = {}
     data['public_key'] = node.wallet.public_key.exportKey('PEM').decode('utf-8')
     data['ip'] = ip
     data['port'] = port
-    
     response = requests.post(f'http://{settings.COORDINATOR_IP}:{settings.COORDINATOR_PORT}/new_node_came', json=data)
     node.id = response.json()['id']
     return str(node.id),200
 
-# Do the essentials after a node is being connected to the network
-@app.route('/new_node_came',methods= ['POST']) # bootstrap scope
+@app.route('/new_node_came',methods= ['POST']) # bootstrap
 def node_details():
-    
-    # Refresh the ring which contains infos for all nodes in network
     global node
     node.current_id_count += 1
     data = request.json
     data['public_key'] = data['public_key'].encode('utf8')
     data['id'] = node.current_id_count
     node.ring[node.current_id_count] = data
+
+    # send_to_new_node(node.open_transactions)
     
-    # Inform the upcoming node for previous open & unspent transactions of the network that bootstrap has
-    list_of_open_transactions = create_list_of_dict_transactions(node.open_transactions)
-    
-    blockchain = create_blockchain_to_dict(node.blockchain)
-    to_send = {}
-    to_send['blockchain'] = blockchain
-    to_send['open_transactions'] = list_of_open_transactions
-    ip = node.ring[node.current_id_count]['ip']
-    port = node.ring[node.current_id_count]['port']
-    requests.post(f'http://{ip}:{port}/open_transactions', json=to_send)
-    
-    # Do the initial transaction to the upcoming node bu giving 100 NBC
+    #do transaction
     receiver_key_PEM = node.ring[node.current_id_count]['public_key']
     receiver_key = RSA.importKey(receiver_key_PEM)
     value = 100
-    
     transaction = node.create_transaction(receiver_key,value)
     
      
@@ -196,56 +178,36 @@ def node_details():
     # Broadcast the transaction to all existing nodes in the network
     to_send = transaction.__dict__
     
-    # print(to_send)
+    print(to_send)
     # print(type(to_send))
     # to_send_json = json.dumps(to_send)
     # print(to_send_json)
     # print(type(to_send_json))
 
     for x in range(node.current_id_count):
-        ip = node.ring[x+1]['ip']
-        port = node.ring[x+1]['port']
-        requests.post(f'http://{ip}:{port}/accept_and_verify_transaction', json=to_send)
+         ip = node.ring[x+1]['ip']
+         port = node.ring[x+1]['port']
+         requests.post(f'http://{ip}:{port}/accept_and_verify_transaction', json=to_send)
 
-    # If all nodes are connected then send to all the network informations that are stored in bootstrap's ring
+    # If all nodes are connected
     if node.current_id_count == node.num_nodes-1:
-        port = node.ring[0]['port']     
+        real_capacity = params.getCapacity()
+        params.changeCapacity(node.num_nodes-1)
+        start_mining()
+
+        params.changeCapacity(real_capacity)
+        port = node.ring[0]['port']
         requests.post(f'http://127.0.0.1:{port}/send_list_of_nodes')
-
-
-    # Finally return the id of the node connected
+    
+    #for each node send the details
+    # to_send = {
+    #     'id': node.current_id_count,
+    #     'blockchain': node.blockchain, # TODO: convert obj to readable
+    #     'unspent_transactions': node.unspent_transactions
+    # }
+    
     to_send = {'id' :  node.current_id_count}
     return jsonify(to_send),200
-    
-# Taking the history of open and unpsent transactions from bootstrap
-@app.route('/open_transactions', methods = ['POST']) # simple node scope
-def open_transactions():
-    global node
-    open_transactions_dict = request.json['open_transactions']
-    open_transactions=[]
-    for x in open_transactions_dict:
-        open_transactions.append(create_transaction_from_dict(x))
-    
-    blockchain = request.json['blockchain'] 
-    # print(blockchain)
-    
-    new_blockchain = []
-    for b in blockchain:
-        previous_hash = b['previousHash']
-        timestamp = b['timestamp']
-        nonce = b['nonce']
-        listOfTransactions = []
-        for y in b['listOfTransactions']:
-            listOfTransactions.append(create_transaction_from_dict(y))
-        block_hash = b['hash']
-        genesis = b['genesis']
-        new_block = Block(previous_hash,nonce,listOfTransactions,genesis = genesis,new_block= False)
-        new_block.set_hash(block_hash)
-        new_blockchain.append(new_block)
-
-    node.init_simple_node(new_blockchain,open_transactions)
-    # node.show_blockchain()
-    return '',200
 
 @app.route('/give_blockchain', methods = ['GET']) # simple node scope
 def give_blockchain():
@@ -266,8 +228,7 @@ def send_list_of_nodes():
         requests.post(f'http://{ip}:{port}/get_list_of_nodes', json=to_send)
     return '',200
 
-# Create each node's ring that holds the network infos 
-@app.route('/get_list_of_nodes', methods=['POST']) #simple node scope |  DONE
+@app.route('/get_list_of_nodes', methods=['POST']) #simple_node  DONE
 def get_list_of_nodes():
     global node
     to_save = request.json
@@ -276,15 +237,17 @@ def get_list_of_nodes():
     node.ring = to_save
     return '',200
 
-# Creating a new transaction
-@app.route('/new_transaction', methods=['POST']) #all scope
+@app.route('/new_transaction', methods=['POST']) #all 
 def new_transaction():
+    # given a transaction object
+    # import test_node as node
+    # node.create_transaction(id->public_key receiver,value)
+    # broadcast transaction
     global node
     response = request.json
     value = int(response['amount'])
     receiver_id = int(response['id'])
-    print('new transaction:',value, type(value),'to receiver:',receiver_id)
-    #Create transaction
+    print(type(value),type(receiver_id))
     receiver_key = RSA.importKey(node.ring[receiver_id]['public_key'])
     transaction = node.create_transaction(receiver_key,value)
     print(transaction.canBeDone)
@@ -299,19 +262,22 @@ def new_transaction():
         start_mining()
     
     #Broadcast to the network
-    # to_send = transaction.__dict__
-    # for x in range(len(node.ring)):
-    #     if x == node.id:
-    #         continue
-    #     ip = node.ring[x]['ip']
-    #     port = node.ring[x]['port']
-    #     requests.post(f'http://{ip}:{port}/accept_and_verify_transaction', json=to_send)
+    to_send = transaction.__dict__
+    for x in range(node.ring):
+        if x == node.id:
+            continue
+        ip = node.ring[x]['ip']
+        port = node.ring[x]['port']
+        requests.post(f'http://{ip}:{port}/accept_and_verify_transaction', json=to_send)
     
     return '',200
 
 # Taking a transaction, verify it and add it to the block
 @app.route('/accept_and_verify_transaction', methods=['POST' , 'GET']) #all scope
 def accept_and_verify_transaction():
+    # given a transaction in body with json
+    # import test_mnode as node
+    # node.add_transaction_to_block(transaction object) = True or False
     global node 
     print("a new transaction came")
     response = request.json
@@ -334,7 +300,6 @@ def accept_and_verify_transaction():
         start_mining()
     return '',200
 
-# View the transactions of last blockchain's block
 @app.route('/view_last_transactions', methods=['GET'])
 def view_last_transactions():
     global node
@@ -342,7 +307,7 @@ def view_last_transactions():
     to_send = str(last_block,node)
     return jsonify(to_send),200
 
-# Show the balance of node's wallet
+
 @app.route('/show_balance', methods=['GET'])
 def show_balance():
     global node
@@ -374,7 +339,7 @@ def mined_block():
             ip = x['ip']
             port = x['port']
             requests.post(f'http://{ip}:{port}/accept_and_verify_block', json=to_send)
-    if len(node.open_transactions) >= settings.capacity:
+    if len(node.open_transactions) >= params.getCapacity():
         start_mining()
     return '',200
 
@@ -420,7 +385,6 @@ def accept_and_verify_block():
                 ip = x['ip']
                 port = x['port']
                 res = requests.get(f'http://{ip}:{port}/give_blockchain')
-                #print(f'http://{ip}:{port}',res.json())
                 new_blockchain = [] # TODO the function 
                 for b in res.json():
                     previous_hash = b['previousHash']
@@ -441,18 +405,16 @@ def accept_and_verify_block():
 #		FOR DEVELOPERS
 #=======================================================
 
-# Check the ring of the node
 @app.route('/test/check_ring', methods=['GET'])
 def test_check_ring():
     params = request.args.get('id')
     global node
-    if node.ring:    
+    if node.ring:
         to_send = copy_list_with_dicts_and_decode(node.ring)
         return jsonify(to_send),200
     else: 
         return '',500
 
-# Check the id of the node
 @app.route('/test/check_id', methods=['GET'])
 def test_check_id_node():
     params = request.args.get('id')
@@ -460,27 +422,6 @@ def test_check_id_node():
     to_send = {'id':node.id}
     return jsonify(to_send),200
 
-# Check the open transactions of the node
-@app.route('/test/open_transactions', methods=['GET'])
-def test_open_transactions():
-    global node
-    to_send = []
-    for x in node.open_transactions:
-        to_send.append(x.__dict__)
-    return jsonify(to_send),200
-    return '',200
-
-# Check the unspent transaction of the node
-@app.route('/test/unspent_transactions', methods=['GET'])
-def test_unspent_transactions():
-    global node
-    return jsonify(node.unspent_transactions),200
-
-@app.route('/test/blockchain', methods=['GET'])
-def test_blockchain():
-    global node
-    node.show_blockchain()
-    return '',200
 
 if __name__ == '__main__':
     from argparse import ArgumentParser
