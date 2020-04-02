@@ -287,7 +287,7 @@ class node:
 		open_tr.transaction_output = output_trs
 
 		return open_tr
-		
+
 
 	def add_block_to_chain(self, block):
 		"""
@@ -418,7 +418,7 @@ class node:
 	#concencus functions
 
 	def valid_chain(self, blockchains):
-		genesis_block = self.blockhain[0]
+		genesis_block = self.blockchain[0]
 		open_transactions = self.open_transactions
 		best_chain = None
 		best_state = None
