@@ -1,6 +1,6 @@
 from block import create_block_content
 from block import Block
-import settings
+import params
 
 from random import randint
 from Crypto.Hash import SHA
@@ -27,19 +27,20 @@ def correct_block(hash, difficulty):
 	return False
 
 def mining_content(node):
-	if len(node.open_transactions) < settings.capacity:
+	capacity = params.getCapacity
+	if len(node.open_transactions) < capacity:
 		print("The open transactions are fewer than the required block capacity")
 
 		return None
 
-	to_be_mined = node.open_transactions[:settings.capacity]
+	to_be_mined = node.open_transactions[:capacity]
 	previous_hash = node.find_last_block_hash()
 	block_content = create_block_content(previous_hash, to_be_mined)
 
 	return block_content, previous_hash, to_be_mined
 	
 def mine_block(block_content):
-	difficulty = settings.difficulty
+	difficulty = getDifficulty()
 		
 	nonce = randint(0, MAX_INT)
 

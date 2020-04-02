@@ -1,10 +1,11 @@
 import requests
 from flask import Flask, jsonify, request, render_template, g
 from flask_cors import CORS
-import test_node as nd
+import node as nd
 import json
 import netifaces as ni
 import settings
+import params
 # import block
 # import node
 # import blockchain
@@ -21,10 +22,6 @@ CORS(app)
 app.config["DEBUG"] = True
 
 node = None
-<<<<<<< HEAD
-
-def copy_list_with_dicts_and_decode(l1):
-=======
 task = None
 i_am_mining = False
 logger = get_task_logger(__name__)
@@ -45,7 +42,6 @@ def mine(block_content):
 
 # Use to extract data from ring and decode the keys to send them via json
 def copy_list_with_dicts_and_decode(l1): 
->>>>>>> 2b1aa7e6a1b559c49ec9d67fa1d5c5018447fb06
     l2 = []
     for d1 in l1:
         d2 = d1.copy()
@@ -54,9 +50,6 @@ def copy_list_with_dicts_and_decode(l1):
         l2.append(d2)
     return l2
 
-<<<<<<< HEAD
-@app.route('/init_coordinator', methods=['POST']) #bootstrap DONE
-=======
 # Use by taking a list of transaction objects and convert it in a list with transactions.__dict__ to send via json 
 def create_list_of_dict_transactions(l1):
     l2 = []
@@ -122,7 +115,6 @@ def start_mining():
 
 #Initializing the coordinator's variables and node
 @app.route('/init_coordinator', methods=['POST']) #bootstrap scope | DONE
->>>>>>> 2b1aa7e6a1b559c49ec9d67fa1d5c5018447fb06
 def init_coordinator():
     participants = request.json['participants']
     port = request.json['port']
@@ -175,11 +167,6 @@ def node_details():
     receiver_key = RSA.importKey(receiver_key_PEM)
     value = 100
     transaction = node.create_transaction(receiver_key,value)
-<<<<<<< HEAD
-
-    # node.add_transaction_to_block(transaction)
-
-=======
     
      
     res = node.add_transaction_to_block(transaction) # returns none if not mining, or the mining block
@@ -189,7 +176,6 @@ def node_details():
         start_mining()
     
     # Broadcast the transaction to all existing nodes in the network
->>>>>>> 2b1aa7e6a1b559c49ec9d67fa1d5c5018447fb06
     to_send = transaction.__dict__
     
     print(to_send)
@@ -205,6 +191,11 @@ def node_details():
 
     # If all nodes are connected
     if node.current_id_count == node.num_nodes-1:
+        real_capacity = params.getCapacity()
+        params.changeCapacity(node.num_nodes-1)
+        start_mining()
+
+        params.changeCapacity(real_capacity)
         port = node.ring[0]['port']
         requests.post(f'http://127.0.0.1:{port}/send_list_of_nodes')
     
@@ -218,9 +209,6 @@ def node_details():
     to_send = {'id' :  node.current_id_count}
     return jsonify(to_send),200
 
-<<<<<<< HEAD
-@app.route('/send_list_of_nodes', methods=['POST']) #bootstrap DONE
-=======
 @app.route('/give_blockchain', methods = ['GET']) # simple node scope
 def give_blockchain():
     global node
@@ -231,7 +219,6 @@ def give_blockchain():
 
 # After all nodes have connected to the network inform all nodes of the network about the network
 @app.route('/send_list_of_nodes', methods=['POST']) #bootstrap scope | DONE
->>>>>>> 2b1aa7e6a1b559c49ec9d67fa1d5c5018447fb06
 def send_list_of_nodes():
     global node
     to_send = copy_list_with_dicts_and_decode(node.ring)
@@ -263,9 +250,6 @@ def new_transaction():
     print(type(value),type(receiver_id))
     receiver_key = RSA.importKey(node.ring[receiver_id]['public_key'])
     transaction = node.create_transaction(receiver_key,value)
-<<<<<<< HEAD
-    
-=======
     if transaction.canBeDone == False:
         return '',500
     
@@ -276,7 +260,6 @@ def new_transaction():
         start_mining()
     
     #Broadcast to the network
->>>>>>> 2b1aa7e6a1b559c49ec9d67fa1d5c5018447fb06
     to_send = transaction.__dict__
     for x in range(node.ring):
         if x == node.id:
@@ -287,12 +270,8 @@ def new_transaction():
     
     return '',200
 
-<<<<<<< HEAD
-@app.route('/accept_and_verify_transaction', methods=['POST']) #all
-=======
 # Taking a transaction, verify it and add it to the block
 @app.route('/accept_and_verify_transaction', methods=['POST' , 'GET']) #all scope
->>>>>>> 2b1aa7e6a1b559c49ec9d67fa1d5c5018447fb06
 def accept_and_verify_transaction():
     # given a transaction in body with json
     # import test_mnode as node
@@ -300,31 +279,6 @@ def accept_and_verify_transaction():
     global node 
     print("a new transaction came")
     response = request.json
-<<<<<<< HEAD
-    print(response)
-    sender = RSA.importKey(response['sender_address'].encode('utf8'))
-    receiver = RSA.importKey(response['receiver_address'].encode('utf8'))
-    value = response['amount']
-    signature = response['signature'].encode('latin-1')
-    
-    transaction = Transaction.Transaction(sender,receiver,value,new_transaction = False) #check keys
-    
-    transaction_id = response['transaction_id']
-    to_be_signed = response['to_be_signed']
-    text = response['text']
-    transaction_input = response['transaction_input']
-    transaction_output = response['transaction_output']
-    # transaction is a transaction object to be modified
-
-    transaction.set_transaction_info(transaction_id,signature,to_be_signed,text,transaction_input,transaction_output)#keys
-    is_valid = node.validate_transaction(transaction)
-    if is_valid:
-        print('Transaction is valid')
-    else:
-        print('is Not Valid')   
-    # node.add_transaction_to_block(transaction)
-    
-=======
     #print(response)
     # global task
     # if task:
@@ -342,19 +296,14 @@ def accept_and_verify_transaction():
     global i_am_mining
     if res == 'mine' and i_am_mining == False and node.ring:
         start_mining()
->>>>>>> 2b1aa7e6a1b559c49ec9d67fa1d5c5018447fb06
     return '',200
 
 @app.route('/view_last_transactions', methods=['GET'])
 def view_last_transactions():
-<<<<<<< HEAD
-    return '',200
-=======
     global node
     last_block = node.blockchain[-1]
     to_send = str(last_block,node)
     return jsonify(to_send),200
->>>>>>> 2b1aa7e6a1b559c49ec9d67fa1d5c5018447fb06
 
 
 @app.route('/show_balance', methods=['GET'])
@@ -367,24 +316,6 @@ def show_balance():
 
 @app.route('/', methods=['POST'])
 def index():
-<<<<<<< HEAD
-    global node
-    print(request.json['message'])
-    message = request.json['message'].encode('utf8')
-    h = SHA.new(message)
-    signer = PKCS1_v1_5.new(node.wallet.private_key)
-    signature = signer.sign(h)
-    decoded_signature = signature.decode('latin-1')
-    data = {
-        'message': request.json['message'],
-        'signature': decoded_signature
-    }
-    print('hi')
-    response = requests.post(f'http://{settings.COORDINATOR_IP}:{settings.COORDINATOR_PORT}/accept_and_verify_transaction', json=data)
-    return '',200
-
-
-=======
     global task
     task.revoke(terminate = True,signal='SIGKILL')
     return '',200
@@ -406,7 +337,7 @@ def mined_block():
             ip = x['ip']
             port = x['port']
             requests.post(f'http://{ip}:{port}/accept_and_verify_block', json=to_send)
-    if len(node.open_transactions) >= settings.capacity:
+    if len(node.open_transactions) >= params.getCapacity():
         start_mining()
     return '',200
 
@@ -452,7 +383,6 @@ def accept_and_verify_block():
                 ip = x['ip']
                 port = x['port']
                 res = requests.get(f'http://{ip}:{port}/give_blockchain')
-                print(f'http://{ip}:{port}',res.json())
                 new_blockchain = [] # TODO the function 
                 for b in res.json():
                     previous_hash = b['previousHash']
@@ -469,7 +399,6 @@ def accept_and_verify_block():
                 all_blockchain.append(new_blockchain)
         node.valid_chain(all_blockchain)
     return '',200
->>>>>>> 2b1aa7e6a1b559c49ec9d67fa1d5c5018447fb06
 #=======================================================
 #		FOR DEVELOPERS
 #=======================================================
@@ -478,7 +407,7 @@ def accept_and_verify_block():
 def test_check_ring():
     params = request.args.get('id')
     global node
-    if node.ring:    
+    if node.ring:
         to_send = copy_list_with_dicts_and_decode(node.ring)
         return jsonify(to_send),200
     else: 

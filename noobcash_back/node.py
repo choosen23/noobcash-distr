@@ -3,7 +3,7 @@ import transaction
 from transaction import Transaction
 from block import create_block_content
 from block import Block
-import settings
+import params
 import mining
 from mining import correct_block
 import consensus
@@ -199,7 +199,6 @@ class node:
 			self.blockchain = state.blockchain
 			self.unspent_transactions = state.unspent_transactions
 			self.open_transactions = state.open_transactions
-			print(len(self.blockchain)) # TODO
 			return True
 
 		else:
@@ -226,7 +225,7 @@ class node:
 		if self.validate_transaction(new_transaction):
 			self.open_transactions.append(new_transaction)
 
-			if len(self.open_transactions) >= settings.capacity:
+			if len(self.open_transactions) >= params.getCapacity():
 				return 'mine'
 
 			else:
@@ -350,7 +349,7 @@ class node:
 	def valid_proof(self, block):
 		""" Checks if the broadcasted new block is valid """
 
-		difficulty = settings.difficulty
+		difficulty = params.getDifficulty()
 		transactions = block.listOfTransactions
 		previous_hash = block.previousHash
 		block_hash = block.hash
@@ -373,7 +372,7 @@ class node:
 			return False
 
 		# Check if the number of transactions is equal to block capacity
-		if len(transactions) != settings.capacity:
+		if len(transactions) != params.getCapacity():
 			print("The number of transactions is not equal to block capacity")
 
 			return False
