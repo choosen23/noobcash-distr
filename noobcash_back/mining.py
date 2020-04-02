@@ -1,11 +1,11 @@
 from block import create_block_content
 from block import Block
-import params
+import settings
 
 from random import randint
 from Crypto.Hash import SHA
 
-MAX_INT = 9223372036854775807
+MAX_INT =  9223372036854775807
 
 def sha(text):
 	""" Hash the text with SHA encryption
@@ -27,20 +27,19 @@ def correct_block(hash, difficulty):
 	return False
 
 def mining_content(node):
-	capacity = params.getCapacity
-	if len(node.open_transactions) < capacity:
+	if len(node.open_transactions) < settings.capacity:
 		print("The open transactions are fewer than the required block capacity")
 
 		return None
 
-	to_be_mined = node.open_transactions[:capacity]
+	to_be_mined = node.open_transactions[:settings.capacity]
 	previous_hash = node.find_last_block_hash()
 	block_content = create_block_content(previous_hash, to_be_mined)
 
 	return block_content, previous_hash, to_be_mined
 	
 def mine_block(block_content):
-	difficulty = getDifficulty()
+	difficulty = settings.difficulty
 		
 	nonce = randint(0, MAX_INT)
 

@@ -1,7 +1,7 @@
 from block import create_block_content
 from mining import sha, correct_block
 import transaction
-import params
+import settings
 
 from Crypto.Hash import SHA
 from Crypto.PublicKey import RSA
@@ -85,7 +85,7 @@ class state:
 	def validate_block(self, block):
 		""" Checks if the block is valid """
 
-		difficulty = params.getDifficulty()
+		difficulty = settings.difficulty
 		transactions = block.listOfTransactions
 		previous_hash = block.previousHash
 		block_hash = block.hash
@@ -106,7 +106,7 @@ class state:
 			return False
 
 		# Check if the number of transactions is equal to block capacity
-		if len(transactions) != params.getCapacity():
+		if len(transactions) != settings.capacity:
 			print("The number of transactions is not equal to block capacity")
 
 			return False

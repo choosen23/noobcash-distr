@@ -199,7 +199,7 @@ class node:
 			self.blockchain = state.blockchain
 			self.unspent_transactions = state.unspent_transactions
 			self.open_transactions = state.open_transactions
-			
+			print(len(self.blockchain)) # TODO
 			return True
 
 		else:
@@ -287,7 +287,7 @@ class node:
 		open_tr.transaction_output = output_trs
 
 		return open_tr
-
+		
 
 	def add_block_to_chain(self, block):
 		"""
