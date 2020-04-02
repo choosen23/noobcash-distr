@@ -41,6 +41,7 @@ def rsa_to_string(rsa_key):
 class wallet:
 
     def __init__(self):
+        # set
 
         self.public_key = None
         self.private_key = None

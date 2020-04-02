@@ -169,17 +169,6 @@ class node:
 		self.wallet.unspent_transactions = self.unspent_transactions
 		self.wallet.showBalance()
 
-	def virtual_balance(self):
-		vBalance = self.wallet_balance()
-
-		for o in self.open_transactions:
-			if o.sender_address == (self.wallet.public_key).exportKey('PEM').decode('utf8'):
-				print('MPHKA EXW STO OPEN IDIO KLEIDI ME TON SENDER')
-				vBalance -= o.amount
-
-		print('virtual balanceeeeee', vBalance)
-		return vBalance
-
 	def create_genesis_block(self):
 		""" The first block of the blockhain """
 
@@ -218,11 +207,6 @@ class node:
 
 
 	def create_transaction(self, receiver, value):
-		virtual_balance = self.virtual_balance()
-		if virtual_balance < value:
-			print("Sender has open transactions that are permits him to send this value")
-			return None		
-
 		new_transaction = Transaction(self.wallet.public_key, receiver, value, sender_private_key = self.wallet.private_key, previous_transactions = self.unspent_transactions)
 
 		return new_transaction
@@ -320,9 +304,6 @@ class node:
 			print('New block cannot be put in the blockchain cause its previous hash is not equal to the hash of the current last block')
 
 			return False
-
-		used_input_transactions = []
-		to_reduce = {}
 		
 		transactions = block.listOfTransactions
 
@@ -336,47 +317,8 @@ class node:
 			# We remove the transaction input unspent transactions cause now they are spent
 			self.unspent_transactions = list(filter(lambda utxo: utxo not in transaction_input, self.unspent_transactions))
 
-			input_found = False
-			for input_tr in transaction_input:
-				if input_tr['transaction_id'] in used_input_transactions:
-					input_found = True
-
 			# We add the new unspent transactions to the list
-			if input_found:
-				sender = tr.sender_str
-				for output_tr in transaction_output:
-					if output_tr['wallet_id'] != sender:
-						self.unspent_transactions.append(output_tr)
-						value_sent = output_tr['amount']
-						if sender in to_reduce:
-							to_reduce[sender] += value_sent
-						else:
-							to_reduce[sender] = value_sent
-						
-			else:
-				self.unspent_transactions = list(np.concatenate((self.unspent_transactions, transaction_output), axis = 0))
-
-			for input_tr in transaction_input:
-				used_input_transactions.append(input_tr['transaction_id'])
-
-
-		for sender in to_reduce:
-			amount = to_reduce[sender]
-			paid = 0
-			for unspent in self.unspent_transactions:
-				amount = amount - paid
-				if amount == 0:
-					break
-				walled_id = unspent['wallet_id']
-				if walled_id == sender:
-					if unspent['amount'] > amount:
-						unspent['amount'] = unspent['amount'] - amount
-						break
-					else:
-						paid = unspent['amount']
-						unspent['amount'] = 0
-						continue
-
+			self.unspent_transactions = list(np.concatenate((self.unspent_transactions, transaction_output), axis = 0))
 
 		for i, open_tr in enumerate(self.open_transactions):
 			self.open_transactions[i] = self.recalculate(open_tr)
