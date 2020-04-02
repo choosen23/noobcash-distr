@@ -48,6 +48,7 @@ while True:
 	# View the transactions of last blockchain's block
 	elif cmd == 'view': 
 		response = requests.get(f'http://127.0.0.1:{args.port}/view_last_transactions')
+		print(response.json())
 	# Print the help message of available commands
 	elif cmd == "help":
 		print(help_message)

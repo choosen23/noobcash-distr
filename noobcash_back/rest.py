@@ -337,8 +337,8 @@ def accept_and_verify_transaction():
 def view_last_transactions():
     global node
     last_block = node.blockchain[-1]
-    print(type(last_block))
-    return '',200
+    to_send = str(last_block,node)
+    return jsonify(to_send),200
 
 # Show the balance of node's wallet
 @app.route('/show_balance', methods=['GET'])
