@@ -82,3 +82,5 @@ if __name__ == '__main__':
 
     ros_wallet = wallet()
     ros_wallet.showBalance()
+
+    print(str(ros_wallet.public_key.exportKey('PEM')))

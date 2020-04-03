@@ -244,6 +244,34 @@ class node:
 		self.wallet.unspent_transactions = self.unspent_transactions
 		self.wallet.showBalance()
 
+	def last_block_transactions(self):
+		last_block = self.blockchain[-1]
+
+		if last_block.genesis:
+			text = 'The blockchain contains only the genesis block\n'
+			text += 'This block contains only the genesis transaction in which sender 0 gives ' + str(100*len(ring)) + ' NBC to boostrap node\n'
+
+			return text
+			
+		transactions = last_block.listOfTransactions
+
+		text = 'Last block transactions:\n\n'
+
+		for tr in transactions:
+			sender = tr.sender_address.exportKey('PEM')
+			receiver = tr.receiver_address.exportKey('PEM')
+			amount = tr.amount
+
+			for i in range(self.ring):
+				if sender == self.ring[i]['public_key']:
+					senderID = i
+				if receiver == self.ring[i]['public_key']:
+					receiverID = i
+
+			text += 'Node ' + str(senderID) + ' pays ' + str(amount) + ' NBC to ' + str(receiverID) + '\n'
+
+		return text
+
 	def create_genesis_block(self):
 		""" The first block of the blockhain """
 
