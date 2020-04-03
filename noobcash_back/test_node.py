@@ -27,6 +27,18 @@ import numpy as np
 
 """ Define some functions that is needed """
 
+
+
+def makeCopy(x):
+	cp = []
+	
+	for tr in x:
+		newtr = {}
+		newtr = tr.copy()
+		cp.append(newtr)
+	
+	return cp
+
 def sha(text):
 	""" Hash the text with SHA encryption
 		The output is the hashed text in binary form """
@@ -101,6 +113,14 @@ class node:
 
 			return False
 
+		# Chech if sender and receiver is the same
+		sender = transaction.sender_str
+		receiver = transaction.receiver_str
+		if sender == receiver:
+			print("Sender and receiver has the same wallet public key")
+
+			return False
+
 		# Chech if there are enough previous unspent transactions of the sender in order to pay the receiver the transaction amount
 		sender = transaction.sender_str
 		amount = transaction.amount
@@ -143,16 +163,59 @@ class node:
 
 					return False
 
-			if len(transaction_output) > 2:
-				print("Output unspent transactions are more than two")
+		if len(transaction_output) > 2:
+			print("Output unspent transactions are more than two")
 
-				return False
+			return False
 
 
-			# Transaction is valid
+		# Transaction is valid
 
-			return True
+		return True
 
+	def simple_validate_transaction(self, transaction):
+		""" When a transaction is received, it needs to be verified first """
+		
+		sender_public_key = RSA.importKey(transaction.sender_address.encode('utf8'))
+
+		# Check if it is signed by the sender
+		message = transaction.to_be_signed
+		signature = transaction.signature.encode('latin-1')
+		h = SHA.new(message.encode('utf8'))
+		verifier = PKCS1_v1_5.new(sender_public_key)
+
+		if not verifier.verify(h, signature):
+			print("The transaction have not been signed by the sender")
+
+			return False
+
+		# Chech if sender and receiver is the same
+		sender = transaction.sender_str
+		receiver = transaction.receiver_str
+		if sender == receiver:
+			print("Sender and receiver has the same wallet public key")
+
+			return False
+
+		# Chech if there are enough previous unspent transactions of the sender in order to pay the receiver the transaction amount
+		sender = transaction.sender_str
+		amount = transaction.amount
+		transaction_input = transaction.transaction_input
+		transaction_output = transaction.transaction_output
+
+		available_amount = 0
+		for tr in transaction_input:
+			if tr['wallet_id'] == sender:
+				available_amount += tr['amount']
+
+		if available_amount < amount:
+			print("Input unspent transactions are not enough for the transaction")
+
+			return False
+
+		# Transaction is valid
+
+		return True
 
 	def create_wallet(self):
 		""" Creates a wallet for this node, with a public key and a private key """
@@ -160,6 +223,18 @@ class node:
 		my_wallet = wallet.wallet()
 
 		return my_wallet
+	
+	def virtual_balance(self):
+		vBalance = self.wallet_balance()
+
+		for o in self.open_transactions:
+			if o.canBeDone:
+				if o.sender_address == (self.wallet.public_key).exportKey('PEM').decode('utf8'):
+					print('XREIASTHKE NA TSEKAROYME TO OPEN TRANSACTIONS GIA VIRTUAL BALANCE TOY SENDER')
+					vBalance -= o.amount
+
+		print('TO VIRTUAL BALANCE TOY SENDER EINAI', vBalance)
+		return vBalance
 
 	def wallet_balance(self):
 		self.wallet.unspent_transactions = self.unspent_transactions
@@ -205,8 +280,12 @@ class node:
 		else:
 			return False
 
-
 	def create_transaction(self, receiver, value):
+		virtual_balance = self.virtual_balance()
+		if virtual_balance < value:
+			print("Sender has open transactions that permit him to send this value")
+			return None
+
 		new_transaction = Transaction(self.wallet.public_key, receiver, value, sender_private_key = self.wallet.private_key, previous_transactions = self.unspent_transactions)
 
 		return new_transaction
@@ -223,7 +302,7 @@ class node:
 				'rejected'  : The transaction is not valid and has been rejected
 		"""
 
-		if self.validate_transaction(new_transaction):
+		if self.simple_validate_transaction(new_transaction):
 			self.open_transactions.append(new_transaction)
 
 			if len(self.open_transactions) >= settings.capacity:
@@ -236,6 +315,8 @@ class node:
 
 
 	def recalculate(self, open_tr):
+
+		open_tr.canBeDone = False
 
 		unspent = [] # contains all the unspent transactions of the sender
 		available_amount = 0
@@ -253,7 +334,7 @@ class node:
 
 			print("Transaction cannot be done due to sender's lack of money")
 
-			return [], []
+			return open_tr
 
 		sorted_trs = sorted(unspent, key = lambda t : t['amount'])
 
@@ -301,6 +382,7 @@ class node:
 		prev_hash = block.previousHash
 
 		if prev_hash != last_hash:
+			print('New block is rejected')
 			print('New block cannot be put in the blockchain cause its previous hash is not equal to the hash of the current last block')
 
 			return False
@@ -314,19 +396,18 @@ class node:
 			# We remove the transaction from the open transactions
 			self.open_transactions = list(filter(lambda open_tr: open_tr.transaction_id != tr.transaction_id, self.open_transactions))
 
-			# We remove the transaction input unspent transactions cause now they are spent
-			self.unspent_transactions = list(filter(lambda utxo: utxo not in transaction_input, self.unspent_transactions))
-
 			# We add the new unspent transactions to the list
 			self.unspent_transactions = list(np.concatenate((self.unspent_transactions, transaction_output), axis = 0))
 
+			# We remove the transaction input unspent transactions cause now they are spent
+			self.unspent_transactions = list(filter(lambda utxo: utxo not in transaction_input, self.unspent_transactions))
+		
 		for i, open_tr in enumerate(self.open_transactions):
 			self.open_transactions[i] = self.recalculate(open_tr)
 
 		self.blockchain.append(block)
 
 		return True
-
 
 	def find_last_block_hash(self):
 		prev = self.blockchain[-1]
@@ -377,17 +458,31 @@ class node:
 
 			return False
 
+		prev_unspent = makeCopy(self.unspent_transactions)
 		# Check if the transactions are valid
 		for tr in transactions:
-			if not self.validate_transaction(tr):
-				print("block contains transactions that are not valid")
+			is_valid = self.validate_transaction(tr)
+			if is_valid:
+				transaction_input = tr.transaction_input
+				transaction_output = tr.transaction_output
+
+				# We add the new unspent transactions to the list
+				self.unspent_transactions = list(np.concatenate((self.unspent_transactions, transaction_output), axis = 0))
+
+				# We remove the transaction input unspent transactions cause now they are spent
+				self.unspent_transactions = list(filter(lambda utxo: utxo not in transaction_input, self.unspent_transactions))
+
+			else:
+				print("Block contains transactions that are not valid")
 				print("Transaction with ID", tr.transaction_id, "is not valid")
+
+				self.unspent_transactions = makeCopy(prev_unspent)
 
 				return False
 
 
 		# Block is valid
-
+		self.unspent_transactions = makeCopy(prev_unspent)
 		return True
 
 

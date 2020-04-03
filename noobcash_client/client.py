@@ -1,6 +1,6 @@
 import requests
 import argparse
-
+import time
 help_message = '''
 Available commands:
 * `t <recipient_address> <amount>`   Send `amount` NBC to `recepient`
@@ -57,13 +57,13 @@ while True:
 			}
 			print("******Transactions*****")
 			print("send to id:",receiver,"the amount:",amount)
-			print(type(receiver),type(amount))
 			response = requests.post(f'http://127.0.0.1:{args.port}/new_transaction',json= to_send)
 			if response.status_code == 200:
 				print("Transaction is done!")
 			elif response.status_code == 500:
 				print("ERROR!")
 				print("Transaction cannot be Done because you don't have enough money")
+			time.sleep(3)
 		continue
 	# View the transactions of last blockchain's block
 	elif cmd == 'view': 

@@ -1,11 +1,21 @@
 from block import create_block_content
 from block import Block
 import settings
-
+import numpy as np
 from random import randint
 from Crypto.Hash import SHA
 
 MAX_INT =  9223372036854775807
+
+def makeCopy(x):
+	cp = []
+	
+	for tr in x:
+		newtr = {}
+		newtr = tr.copy()
+		cp.append(newtr)
+	
+	return cp
 
 def sha(text):
 	""" Hash the text with SHA encryption
@@ -32,12 +42,94 @@ def mining_content(node):
 
 		return None
 
-	to_be_mined = node.open_transactions[:settings.capacity]
+	unspent_to_use = makeCopy(node.unspent_transactions)
+
+	to_be_mined = []
+
+	for i in range(0, len(node.open_transactions)):
+		new_tr = node.open_transactions[i]
+		new_tr = mining_recalculate(unspent_to_use, new_tr)
+
+		if new_tr.canBeDone:
+			to_be_mined.append(new_tr)
+
+			if len(to_be_mined) == settings.capacity:
+				break
+		
+			transaction_input = new_tr.transaction_input
+			transaction_output = new_tr.transaction_output
+
+			# We add the new unspent transactions to the list
+			unspent_to_use = list(np.concatenate((unspent_to_use, transaction_output), axis = 0))
+		
+			# We remove the transaction input unspent transactions cause now they are spent
+			unspent_to_use = list(filter(lambda utxo: utxo not in transaction_input, unspent_to_use))
+		
+	if len(to_be_mined) < settings.capacity:
+		print("The open transactions that can be done are fewer than the required block capacity")
+		return None
+
 	previous_hash = node.find_last_block_hash()
 	block_content = create_block_content(previous_hash, to_be_mined)
 
 	return block_content, previous_hash, to_be_mined
-	
+
+
+def mining_recalculate(unspent_trs, open_tr):
+
+	open_tr.canBeDone = False
+
+	unspent = [] # contains all the unspent transactions of the sender
+	available_amount = 0
+
+	for tr in unspent_trs:
+		if tr['wallet_id'] == open_tr.sender_str:
+			available_amount += tr['amount']
+			unspent.append(tr)
+
+	if available_amount < open_tr.amount:
+		""" Sender does not have enough UTXOs
+			Transaction cannot be done """
+
+		open_tr.canBeDone = False
+
+		print("Transaction cannot be done due to sender's lack of money")
+
+		return open_tr
+
+	sorted_trs = sorted(unspent, key = lambda t : t['amount'])
+
+	input_trs = []
+	output_trs = []
+
+	paid = 0
+	while (paid < open_tr.amount):
+		tr = sorted_trs.pop(0) # utxo will be used for this transaction so it is removes from the list
+		input_trs.append(tr) # also this transactions is added to input transactions
+		paid += tr['amount']
+		if (paid > open_tr.amount):
+			change = paid - open_tr.amount
+
+			new_tr = {} # we create a new utxo for sender
+			new_tr['transaction_id'] = tr['transaction_id']
+			new_tr['wallet_id'] = tr['wallet_id']
+			new_tr['amount'] = change
+
+			output_trs.append(new_tr)
+
+	new_tr = {} # we create a new utxo for receiver
+	new_tr['transaction_id'] = open_tr.transaction_id
+	new_tr['wallet_id'] = open_tr.receiver_str
+	new_tr['amount'] = open_tr.amount
+	output_trs.append(new_tr)
+
+	open_tr.canBeDone = True
+
+	open_tr.transaction_input = input_trs
+	open_tr.transaction_output = output_trs
+
+	return open_tr
+
 def mine_block(block_content):
 	difficulty = settings.difficulty
 		

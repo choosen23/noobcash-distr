@@ -260,8 +260,7 @@
 		
 		for tr in x:
 			newtr = {}
-			for i in tr:
-				newtr[i] = tr[i]
+			newtr = tr.copy()
 			cp.append(newtr)
 		
 		return cp
@@ -321,7 +320,7 @@
 
 
 		# Block is valid
-
+		self.unspent_transactions = makeCopy(prev_unspent)
 		return True
 
 
@@ -401,7 +400,7 @@ def mining_content(node):
 	unspent_to_use = makeCopy(node.unspent_transactions)
 
 	to_be_mined = []
-
+	found = False
 	for i in range(0, len(node.open_transactions)):
 		newtr = node.open_transactions[i]
 		newtr = mining_recalculate(unspent_to_use, newtr)
@@ -410,6 +409,7 @@ def mining_content(node):
 			to_be_mined.append(new_tr)
 
 			if len(to_be_mined) == settings.capacity:
+				found= True
 				break
 
 			transaction_input = new_tr.transaction_input
@@ -419,13 +419,14 @@ def mining_content(node):
 			unspent_to_use = list(np.concatenate((unspent_to_use, transaction_output), axis = 0))
 
 			# We remove the transaction input unspent transactions cause now they are spent
-			unspent_to_use = list(filter(lambda utxo: utxo not in transaction_input, unspent_to_use)
+			unspent_to_use = list(filter(lambda utxo: utxo not in transaction_input, unspent_to_use))
 
-	if len(to_be_mined) < settings.capacity:
+	# if len(to_be_mined)<settings.capacity:
+	if found == False:
 		print("The open transactions that can be done are fewer than the required block capacity")
 
 		return None
-
+	
 	previous_hash = node.find_last_block_hash()
 	block_content = create_block_content(previous_hash, to_be_mined)
 

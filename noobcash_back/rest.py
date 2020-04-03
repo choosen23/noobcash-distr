@@ -14,8 +14,12 @@ from my_celery import make_celery
 import mining 
 from celery.utils.log import get_task_logger
 from block import Block
+from flask_stats.flask_stats import Stats
+
 app = Flask(__name__)
 CORS(app)
+
+Stats(app)
 app.config.update(
     CELERY_BROKER_URL='redis://localhost:6379',
     CELERY_RESULT_BACKEND='redis://localhost:6379'
@@ -287,7 +291,7 @@ def new_transaction():
     #Create transaction
     receiver_key = RSA.importKey(node.ring[receiver_id]['public_key'])
     transaction = node.create_transaction(receiver_key,value)
-    if transaction.canBeDone == False:
+    if transaction is None or transaction.canBeDone == False:
         return '',500
     
     res = node.add_transaction_to_block(transaction) # returns none if not mining, or the mining block
@@ -336,8 +340,7 @@ def accept_and_verify_transaction():
 @app.route('/view_last_transactions', methods=['GET'])
 def view_last_transactions():
     global node
-    last_block = node.blockchain[-1]
-    to_send = str(last_block,node)
+    to_send = node.View_LAST_BLOCK()
     return jsonify(to_send),200
 
 # Show the balance of node's wallet
@@ -400,7 +403,7 @@ def accept_and_verify_block():
     new_block.set_hash(block_hash)
     from datetime import datetime
     res = node.block_placement(new_block)
-    print(str(datetime.now()),"RES from block placement is: ", res)
+    #print(str(datetime.now()),"RES from block placement is: ", res)
     if res == "OK":
         print('OKKK RRRRRRRRR')
         if node.valid_proof(new_block):

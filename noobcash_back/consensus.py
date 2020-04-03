@@ -9,6 +9,16 @@ from Crypto.Signature import PKCS1_v1_5
 
 import numpy as np
 
+def makeCopy(x):
+	cp = []
+	
+	for tr in x:
+		newtr = {}
+		newtr = tr.copy()
+		cp.append(newtr)
+	
+	return cp
+
 class state:
 
 	def __init__(self, genesis_block, open_transactions):
@@ -45,7 +55,61 @@ class state:
 				print('Blockchain is not valid cause block with id', hex(int(block.hash, 2))[2:], 'is not valid')
 				self.valid_blockchain = False
 
-	
+	def recalculate(self, open_tr):
+
+		open_tr.canBeDone = False
+
+		unspent = [] # contains all the unspent transactions of the sender
+		available_amount = 0
+
+		for tr in self.unspent_transactions:
+			if tr['wallet_id'] == open_tr.sender_str:
+				available_amount += tr['amount']
+				unspent.append(tr)
+
+		if available_amount < open_tr.amount:
+			""" Sender does not have enough UTXOs
+				Transaction cannot be done """
+
+			open_tr.canBeDone = False
+
+			print("Transaction cannot be done due to sender's lack of money")
+
+			return open_tr
+
+		sorted_trs = sorted(unspent, key = lambda t : t['amount'])
+
+		input_trs = []
+		output_trs = []
+
+		paid = 0
+		while (paid < open_tr.amount):
+			tr = sorted_trs.pop(0) # utxo will be used for this transaction so it is removes from the list
+			input_trs.append(tr) # also this transactions is added to input transactions
+			paid += tr['amount']
+			if (paid > open_tr.amount):
+				change = paid - open_tr.amount
+
+				new_tr = {} # we create a new utxo for sender
+				new_tr['transaction_id'] = tr['transaction_id']
+				new_tr['wallet_id'] = tr['wallet_id']
+				new_tr['amount'] = change
+
+				output_trs.append(new_tr)
+
+		new_tr = {} # we create a new utxo for receiver
+		new_tr['transaction_id'] = open_tr.transaction_id
+		new_tr['wallet_id'] = open_tr.receiver_str
+		new_tr['amount'] = open_tr.amount
+		output_trs.append(new_tr)
+
+		open_tr.canBeDone = True
+
+		open_tr.transaction_input = input_trs
+		open_tr.transaction_output = output_trs
+
+		return open_tr
+
 	def add_block_to_chain(self, block):
 		"""
 			Returns:
@@ -58,6 +122,7 @@ class state:
 		prev_hash = block.previousHash
 
 		if prev_hash != last_hash:
+			print('New block is rejected')
 			print('New block cannot be put in the blockchain cause its previous hash is not equal to the hash of the current last block')
 
 			return False
@@ -71,11 +136,14 @@ class state:
 			# We remove the transaction from the open transactions
 			self.open_transactions = list(filter(lambda open_tr: open_tr.transaction_id != tr.transaction_id, self.open_transactions))
 
-			# We remove the transaction input unspent transactions cause now they are spent
-			self.unspent_transactions = list(filter(lambda utxo: utxo not in transaction_input, self.unspent_transactions))
-
 			# We add the new unspent transactions to the list
 			self.unspent_transactions = list(np.concatenate((self.unspent_transactions, transaction_output), axis = 0))
+
+			# We remove the transaction input unspent transactions cause now they are spent
+			self.unspent_transactions = list(filter(lambda utxo: utxo not in transaction_input, self.unspent_transactions))
+		
+		for i, open_tr in enumerate(self.open_transactions):
+			self.open_transactions[i] = self.recalculate(open_tr)
 
 		self.blockchain.append(block)
 
@@ -96,7 +164,9 @@ class state:
 		hashed = sha(block_content + str(nonce))
 		if not (hashed == block_hash):
 			print("Block hash is fake")
-
+			print(hashed)
+			print(block_hash)
+			print(previous_hash)
 			return False
 
 		# Check the proof of work
@@ -111,17 +181,30 @@ class state:
 
 			return False
 
+		prev_unspent = makeCopy(self.unspent_transactions)
 		# Check if the transactions are valid
 		for tr in transactions:
-			if not self.validate_transaction(tr):
-				print("block contains transactions that are not valid")
+			is_valid = self.validate_transaction(tr)
+			if is_valid:
+				transaction_input = tr.transaction_input
+				transaction_output = tr.transaction_output
+
+				# We add the new unspent transactions to the list
+				self.unspent_transactions = list(np.concatenate((self.unspent_transactions, transaction_output), axis = 0))
+
+				# We remove the transaction input unspent transactions cause now they are spent
+				self.unspent_transactions = list(filter(lambda utxo: utxo not in transaction_input, self.unspent_transactions))
+
+			else:
+				print("Block contains transactions that are not valid")
 				print("Transaction with ID", tr.transaction_id, "is not valid")
 
+				self.unspent_transactions = makeCopy(prev_unspent)
+
 				return False
-
-
+			
 		# Block is valid
-
+		self.unspent_transactions = makeCopy(prev_unspent)
 		return True
 
 
@@ -138,6 +221,14 @@ class state:
 
 		if not verifier.verify(h, signature):
 			print("The transaction have not been signed by the sender")
+
+			return False
+
+		# Chech if sender and receiver is the same
+		sender = transaction.sender_str
+		receiver = transaction.receiver_str
+		if sender == receiver:
+			print("Sender and receiver has the same wallet public key")
 
 			return False
 
@@ -183,12 +274,12 @@ class state:
 
 					return False
 
-			if len(transaction_output) > 2:
-				print("Output unspent transactions are more than two")
+		if len(transaction_output) > 2:
+			print("Output unspent transactions are more than two")
 
-				return False
+			return False
 
 
-			# Transaction is valid
+		# Transaction is valid
 
-			return True
+		return True
