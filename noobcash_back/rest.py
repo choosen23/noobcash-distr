@@ -1,7 +1,7 @@
 import requests
 from flask import Flask, jsonify, request, render_template, g
 from flask_cors import CORS
-import test_node as nd
+import node as nd
 import json
 import netifaces as ni
 import settings
@@ -19,7 +19,7 @@ from flask_stats.flask_stats import Stats
 app = Flask(__name__)
 CORS(app)
 
-Stats(app)
+#Stats(app)
 app.config.update(
     CELERY_BROKER_URL='redis://localhost:6379',
     CELERY_RESULT_BACKEND='redis://localhost:6379'
@@ -340,7 +340,8 @@ def accept_and_verify_transaction():
 @app.route('/view_last_transactions', methods=['GET'])
 def view_last_transactions():
     global node
-    to_send = node.View_LAST_BLOCK()
+    to_send = node.last_block_transactions()
+    print(to_send)
     return jsonify(to_send),200
 
 # Show the balance of node's wallet
@@ -352,11 +353,12 @@ def show_balance():
     }
     return jsonify(to_send),200
 
-@app.route('/', methods=['POST'])
+@app.route('/save_blockchain', methods=['GET'])
 def index():
-    global task
-    task.revoke(terminate = True,signal='SIGKILL')
-    return '',200
+    global node
+    blockchain = create_blockchain_to_dict(node.blockchain)
+
+    return jsonify(blockchain),200
 
 @app.route('/mined_block', methods=['POST'])
 def mined_block():
@@ -421,8 +423,8 @@ def accept_and_verify_block():
                 ip = x['ip']
                 port = x['port']
                 res = requests.get(f'http://{ip}:{port}/give_blockchain')
-                print(f'http://{ip}:{port}',res.json())
-                new_blockchain = [] # TODO the function 
+                #print(f'http://{ip}:{port}',res.json())
+                new_blockchain = [] 
                 for b in res.json():
                     previous_hash = b['previousHash']
                     timestamp = b['timestamp']
@@ -434,9 +436,11 @@ def accept_and_verify_block():
                     genesis = b['genesis']
                     new_block = Block(previous_hash,nonce,listOfTransactions,genesis = genesis,new_block= False)
                     new_block.set_hash(block_hash)
-                    new_blockchain.append(new_block)
+                    new_blockchain.append(new_b/home/dimitris/Desktop/noobcash-distr/lock)
                 all_blockchain.append(new_blockchain)
         node.valid_chain(all_blockchain)
+    if len(node.open_transactions) >= settings.capacity:
+        start_mining()
     return '',200
 #=======================================================
 #		FOR DEVELOPERS

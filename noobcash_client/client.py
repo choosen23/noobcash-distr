@@ -46,6 +46,7 @@ while True:
 		response = requests.get(f'http://127.0.0.1:{args.port}/show_balance')
 		print(str(response.json()['balance']) + ' NBC')
 	elif cmd == 'test':
+		count = 0 
 		f = open(f"../transactions/5nodes/transactions{my_id}.txt", "r")
 		for x in f:
 			line = x.split()
@@ -63,7 +64,10 @@ while True:
 			elif response.status_code == 500:
 				print("ERROR!")
 				print("Transaction cannot be Done because you don't have enough money")
-			time.sleep(3)
+			time.sleep(4)
+			count += 1
+			if count == 20:
+				break
 		continue
 	# View the transactions of last blockchain's block
 	elif cmd == 'view': 
